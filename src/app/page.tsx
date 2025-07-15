@@ -49,12 +49,10 @@ export default function Home() {
         <div className="hidden lg:block w-2/5 relative">
             <div className="absolute inset-0 bg-gradient-to-r from-[#0A0A0A] via-transparent to-transparent z-10"></div>
             <Image 
-                src="https://placehold.co/800x1200.png" 
-                alt="Modern Arewa City" 
+                src="/arewadev.png" 
+                alt="Arewa Devs Community" 
                 fill
-                objectFit="cover" 
-                className="opacity-40"
-                data-ai-hint="modern arewa city"
+                className="object-cover opacity-40"
             />
         </div>
       </div>
