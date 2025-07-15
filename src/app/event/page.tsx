@@ -73,7 +73,7 @@ export default function EventPage() {
             <p className="mt-8 max-w-2xl text-center text-lg text-muted-foreground">
               An exclusive gathering of tech enthusiasts and professionals in Northern Nigeria. Join us to connect, learn, and showcase your work.
             </p>
-            <div className="mt-10 flex flex-col sm:flex-row gap-4">
+            <div className="mt-10 flex flex-wrap justify-center gap-4">
               <Dialog open={isRegisterDialogOpen} onOpenChange={setIsRegisterDialogOpen}>
                 <DialogTrigger asChild>
                   <Button size="lg" className="text-lg py-7 px-8 transform hover:scale-105 transition-transform duration-300">
@@ -124,6 +124,9 @@ export default function EventPage() {
                   </div>
                 </DialogContent>
               </Dialog>
+              <Button asChild size="lg" variant="secondary" className="text-lg py-7 px-8">
+                <Link href="/promote">Create Promo Banner</Link>
+              </Button>
             </div>
              <div className="mt-8">
                  <Button asChild variant="link">
