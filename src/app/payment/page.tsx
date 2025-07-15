@@ -10,11 +10,12 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter }
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Toaster } from '@/components/ui/toaster';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, University, Printer, ArrowLeft } from 'lucide-react';
+import { Loader2, University, Printer, ArrowLeft, Ticket, Share2 } from 'lucide-react';
 import { findSubmissionByEmail, updateSubmissionStatus } from '@/app/actions/registration-actions';
 import { Separator } from '@/components/ui/separator';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Logo } from '@/components/logo';
+import Link from 'next/link';
 
 type Submission = {
   id: string;
@@ -318,7 +319,21 @@ export default function PaymentPage() {
                 <h3 className="text-lg font-semibold text-green-800 dark:text-green-300">Thank you for your payment!</h3>
                 <p className="text-sm text-muted-foreground mt-2">A confirmation has been sent to your email.</p>
             </div>
-             <Button variant="outline" className="mt-6" onClick={resetState}>Start Over</Button>
+            <div className="mt-6 flex flex-col sm:flex-row gap-4 justify-center">
+                <Button asChild>
+                    <Link href={`/ticket?id=${submission?.id}`}>
+                        <Ticket />
+                        Print Your Ticket
+                    </Link>
+                </Button>
+                <Button asChild variant="secondary">
+                     <Link href={`/badge?id=${submission?.id}`}>
+                        <Share2 />
+                        Create Social Badge
+                    </Link>
+                </Button>
+            </div>
+             <Button variant="link" className="mt-4" onClick={resetState}>Start Over</Button>
         </CardContent>
     </Card>
   )

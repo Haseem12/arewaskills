@@ -158,3 +158,25 @@ export async function findSubmissionByEmail(email: string) {
         return { success: false, error: error.message, data: null };
     }
 }
+
+export async function findSubmissionById(id: string) {
+    try {
+        const registrations = await readData(registrationsFilePath);
+        const showcases = await readData(showcasesFilePath);
+
+        const allSubmissions = [
+            ...registrations.map(r => ({ ...r, type: 'registration' })),
+            ...showcases.map(s => ({ ...s, type: 'showcase' }))
+        ];
+
+        const submission = allSubmissions.find(sub => sub.id === id);
+
+        if (submission) {
+            return { success: true, data: submission };
+        }
+
+        return { success: false, error: "No submission found for this ID.", data: null };
+    } catch (error: any) {
+        return { success: false, error: error.message, data: null };
+    }
+}

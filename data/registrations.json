@@ -21,6 +21,34 @@
     "job_title": "Manager",
     "years_of_experience": 2,
     "what_do_you_hope_to_learn_": "Gjdjdjdjjdjjdjdjdjdjjdjdjjdjdjdjjdjsjsjsksksjdjksk",
+    "status": "paid",
+    "paymentMethod": "bank_transfer",
+    "receiptNumber": "7ewurur"
+  },
+  {
+    "id": "1752575726306",
+    "submittedAt": "2025-07-15T10:35:26.306Z",
+    "full_name": "Sani Mabaruka",
+    "email": "mabaruka@gmail.com",
+    "phone_number": "09039129668",
+    "company_organization": "Mabaruka Gallery",
+    "job_title": "Manager",
+    "years_of_experience": 5,
+    "what_do_you_hope_to_learn_": "I will join to see showcasing stuff and the rest.",
+    "status": "paid",
+    "paymentMethod": "bank_transfer",
+    "receiptNumber": "Bashru"
+  },
+  {
+    "id": "1752575767515",
+    "submittedAt": "2025-07-15T10:36:07.515Z",
+    "full_name": "Sani Mabaruka",
+    "email": "mabaruka@gmail.com",
+    "phone_number": "09039129668",
+    "company_organization": "Mabaruka Gallery",
+    "job_title": "Manager",
+    "years_of_experience": 5,
+    "what_do_you_hope_to_learn_": "I will join to see showcasing stuff and the rest.",
     "status": "payment_pending"
   }
 ]
