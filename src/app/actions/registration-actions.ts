@@ -7,7 +7,12 @@ const dataDir = path.join(process.cwd(), 'data');
 const registrationsFilePath = path.join(dataDir, 'registrations.json');
 const showcasesFilePath = path.join(dataDir, 'showcases.json');
 
-async function readData(filePath: string) {
+type Submission = {
+    id: string;
+    [key: string]: any;
+};
+
+async function readData(filePath: string): Promise<Submission[]> {
   try {
     await fs.mkdir(path.dirname(filePath), { recursive: true });
     const data = await fs.readFile(filePath, 'utf-8');
@@ -77,5 +82,43 @@ export async function getShowcases() {
         return { success: true, data: showcases.reverse() };
     } catch (error: any) {
         return { success: false, error: error.message, data: [] };
+    }
+}
+
+export async function updateSubmissionStatus(ids: string[], status: 'payment_pending' | 'paid') {
+    try {
+        const registrations = await readData(registrationsFilePath);
+        const showcases = await readData(showcasesFilePath);
+
+        const updatedRegistrations = registrations.map(reg => 
+            ids.includes(reg.id) ? { ...reg, status } : reg
+        );
+        const updatedShowcases = showcases.map(shw => 
+            ids.includes(shw.id) ? { ...shw, status } : shw
+        );
+
+        await writeData(registrationsFilePath, updatedRegistrations);
+        await writeData(showcasesFilePath, updatedShowcases);
+
+        return { success: true };
+    } catch (error: any) {
+        return { success: false, error: error.message };
+    }
+}
+
+export async function findSubmissionByEmail(email: string) {
+    try {
+        const registrations = await readData(registrationsFilePath);
+        const showcases = await readData(showcasesFilePath);
+
+        const registration = registrations.find(r => r.email?.toLowerCase() === email.toLowerCase());
+        if (registration) return { success: true, data: { ...registration, type: 'registration' } };
+
+        const showcase = showcases.find(s => s.presenterEmail?.toLowerCase() === email.toLowerCase());
+        if (showcase) return { success: true, data: { ...showcase, type: 'showcase' } };
+        
+        return { success: false, error: "No submission found for this email.", data: null };
+    } catch(error: any) {
+        return { success: false, error: error.message, data: null };
     }
 }
