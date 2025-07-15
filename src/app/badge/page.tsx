@@ -45,39 +45,31 @@ function BadgeGenerator() {
 
 
     // Background
-    ctx.fillStyle = "hsl(180, 60%, 92.5%)"; // background
+    ctx.fillStyle = "hsl(180, 60%, 95%)"; // card
     ctx.fillRect(0, 0, width, height);
     
-    // Main Card
-    const cardPadding = 50;
-    ctx.fillStyle = 'hsl(180, 60%, 95%)'; // card
-    ctx.shadowColor = 'rgba(0, 0, 0, 0.1)';
-    ctx.shadowBlur = 30;
-    ctx.shadowOffsetY = 10;
-    ctx.beginPath();
-    ctx.roundRect(cardPadding, cardPadding, width - (cardPadding * 2), height - (cardPadding * 2), 30);
-    ctx.fill();
-    ctx.shadowColor = 'transparent';
-
-    // Header section
-    const headerHeight = 250;
+    // Header section wave
     ctx.fillStyle = "hsl(180, 100%, 25.1%)"; // primary
     ctx.beginPath();
-    ctx.roundRect(cardPadding, cardPadding, width - (cardPadding*2), headerHeight, [30, 30, 0, 0]);
+    ctx.moveTo(0, 0);
+    ctx.lineTo(width, 0);
+    ctx.lineTo(width, 250);
+    ctx.quadraticCurveTo(width / 2, 350, 0, 250);
+    ctx.closePath();
     ctx.fill();
 
     // Header text
     ctx.fillStyle = 'white';
     ctx.textAlign = 'center';
     ctx.font = 'bold 70px Inter, sans-serif';
-    ctx.fillText("Arewa Tech Connect", width / 2, cardPadding + 120);
+    ctx.fillText("Arewa Tech Connect", width / 2, 120);
     ctx.font = '40px Inter, sans-serif';
-    ctx.fillText("Dev & AI Hangout", width / 2, cardPadding + 180);
+    ctx.fillText("Dev & AI Hangout", width / 2, 190);
 
     // Draw user image placeholder or image
     ctx.save();
     const imageSize = 400;
-    const imageY = cardPadding + headerHeight + 60;
+    const imageY = 320;
     const imageX = (width - imageSize) / 2;
 
     ctx.beginPath();
@@ -117,6 +109,7 @@ function BadgeGenerator() {
     
     // a function to fit text in a box
     const fitText = (text: string, maxWidth: number, fontSize: number = 80) => {
+        if (!text) return text;
         ctx.font = `bold ${fontSize}px Inter, sans-serif`;
         while (ctx.measureText(text).width > maxWidth) {
             fontSize--;
@@ -124,19 +117,24 @@ function BadgeGenerator() {
         }
         return text;
     }
-    const fittedName = fitText(name, width - (cardPadding * 4));
-    ctx.fillText(fittedName, width / 2, imageY + imageSize + 120);
+
+    const nameY = imageY + imageSize + 100;
+    const fittedName = fitText(name, width - 160);
+    ctx.fillText(fittedName, width / 2, nameY);
     
     if (organization) {
+      const orgY = nameY + 70;
       ctx.font = '40px Inter, sans-serif';
       ctx.fillStyle = '#555';
-      const fittedOrg = fitText(organization, width - (cardPadding * 4), 40);
-      ctx.fillText(fittedOrg, width / 2, imageY + imageSize + 180);
+      const fittedOrg = fitText(organization, width - 160, 40);
+      ctx.fillText(fittedOrg, width / 2, orgY);
     }
-
-    ctx.font = '50px Inter, sans-serif';
-    ctx.fillStyle = '#555';
-    ctx.fillText("I'll be there!", width / 2, imageY + imageSize + 250);
+    
+    // Footer CTA
+    const footerY = height - 100;
+    ctx.font = 'bold 60px Inter, sans-serif';
+    ctx.fillStyle = 'hsl(180, 100%, 25.1%)'; // primary
+    ctx.fillText("I'll be there!", width / 2, footerY);
   };
 
   useEffect(() => {
@@ -203,7 +201,7 @@ function BadgeGenerator() {
   }
 
   if (loading) {
-    return <Card className="w-full max-w-xl"><CardContent className="p-6"><Skeleton className="h-96 w-full" /></CardContent></Card>;
+    return <Card className="w-full max-w-xl"><CardContent className="p-6"><Skeleton className="aspect-square w-full" /></CardContent></Card>;
   }
 
   if (error) {
