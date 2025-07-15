@@ -11,6 +11,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, ArrowLeft, ArrowRight, PartyPopper } from 'lucide-react';
 import { Progress } from '@/components/ui/progress';
+import { saveShowcase } from '@/app/actions/registration-actions';
 
 interface ShowcaseFormProps {
     onShowcaseSuccess?: () => void;
@@ -47,17 +48,19 @@ export function ShowcaseForm({ onShowcaseSuccess }: ShowcaseFormProps) {
   const [isPending, startTransition] = useTransition();
   const { toast } = useToast();
 
+  const currentSchema = steps[currentStep]?.schema ?? showcaseSchema;
   const form = useForm<ShowcaseFormValues>({
-    resolver: zodResolver(steps[currentStep].schema),
+    resolver: zodResolver(currentSchema),
     mode: 'onChange',
   });
 
   const progress = ((currentStep + 1) / (steps.length + 1)) * 100;
 
   const handleNext = async () => {
-    const isValid = await form.trigger(steps[currentStep].fields as any);
+    const fields = steps[currentStep].fields;
+    const isValid = await form.trigger(fields as any);
     if (isValid) {
-      if (currentStep < steps.length - 1) {
+      if (currentStep < steps.length) {
         setCurrentStep(prev => prev + 1);
       }
     }
@@ -71,21 +74,29 @@ export function ShowcaseForm({ onShowcaseSuccess }: ShowcaseFormProps) {
 
   const onSubmit = (values: ShowcaseFormValues) => {
     startTransition(async () => {
-      console.log('Showcase Submission:', values);
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1500));
+      const result = await saveShowcase(values);
       
-      form.reset();
-      
-      toast({
-        title: "Project Submitted!",
-        description: "Thanks for submitting your project. We'll be in touch soon.",
-        variant: 'default',
-        duration: 5000,
-      });
+      if (result.success) {
+        setCurrentStep(0);
+        form.reset();
+        
+        toast({
+          title: "Project Submitted!",
+          description: "Thanks for submitting your project. We'll be in touch soon.",
+          variant: 'default',
+          duration: 5000,
+        });
 
-      if (onShowcaseSuccess) {
-        onShowcaseSuccess();
+        if (onShowcaseSuccess) {
+          onShowcaseSuccess();
+        }
+      } else {
+        toast({
+            title: "Submission Failed",
+            description: result.error,
+            variant: "destructive",
+            duration: 5000,
+        });
       }
     });
   };
@@ -131,17 +142,9 @@ export function ShowcaseForm({ onShowcaseSuccess }: ShowcaseFormProps) {
               )} />
             </div>
           )}
-
-          {currentStep === steps.length && (
-            <div className="text-center py-8 space-y-4">
-              <PartyPopper className="h-16 w-16 mx-auto text-primary" />
-              <h2 className="text-2xl font-bold">All Done!</h2>
-              <p className="text-muted-foreground">Click submit to finalize your project showcase submission.</p>
-            </div>
-          )}
-
+          
           <div className="flex justify-between items-center pt-4">
-            {currentStep > 0 && currentStep < steps.length && (
+            {currentStep > 0 && (
               <Button type="button" variant="outline" onClick={handleBack}>
                 <ArrowLeft className="mr-2 h-4 w-4" /> Back
               </Button>
@@ -152,15 +155,17 @@ export function ShowcaseForm({ onShowcaseSuccess }: ShowcaseFormProps) {
                 Next <ArrowRight className="ml-2 h-4 w-4" />
               </Button>
             )}
-            {currentStep === steps.length - 1 && (
-              <Button type="button" onClick={handleNext}>
-                Finish <PartyPopper className="ml-2 h-4 w-4" />
-              </Button>
-            )}
-            {currentStep === steps.length && (
-              <Button type="submit" className="w-full" disabled={isPending}>
-                {isPending ? <> <Loader2 className="mr-2 h-5 w-5 animate-spin" /> Submitting... </> : 'Submit Project'}
-              </Button>
+            {currentStep === steps.length -1 && (
+                 <Button type="submit" disabled={isPending}>
+                 {isPending ? (
+                   <>
+                     <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                     Submitting...
+                   </>
+                 ) : (
+                   'Submit Project'
+                 )}
+               </Button>
             )}
           </div>
         </form>

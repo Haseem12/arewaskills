@@ -1,17 +1,17 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { getRegistrations } from '@/app/actions/registration-actions';
+import { getRegistrations, getShowcases } from '@/app/actions/registration-actions';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Badge } from '@/components/ui/badge';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Toaster } from '@/components/ui/toaster';
 import { useToast } from '@/hooks/use-toast';
 
-type Registration = {
+type Submission = {
   id: string;
   submittedAt: string;
   [key: string]: any;
@@ -22,27 +22,42 @@ const ADMIN_PASSWORD = process.env.NEXT_PUBLIC_ADMIN_PASSWORD || 'password';
 export default function AdminPage() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [password, setPassword] = useState('');
-  const [registrations, setRegistrations] = useState<Registration[]>([]);
+  const [registrations, setRegistrations] = useState<Submission[]>([]);
+  const [showcases, setShowcases] = useState<Submission[]>([]);
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
 
   useEffect(() => {
     if (isAuthenticated) {
-      async function loadRegistrations() {
+      async function loadData() {
         setLoading(true);
-        const result = await getRegistrations();
-        if (result.success) {
-          setRegistrations(result.data);
+        const [regResult, showcaseResult] = await Promise.all([
+          getRegistrations(),
+          getShowcases()
+        ]);
+
+        if (regResult.success) {
+          setRegistrations(regResult.data);
         } else {
           toast({
-            title: 'Error',
-            description: result.error,
+            title: 'Error Loading Registrations',
+            description: regResult.error,
             variant: 'destructive',
           });
         }
+
+        if (showcaseResult.success) {
+          setShowcases(showcaseResult.data);
+        } else {
+            toast({
+                title: 'Error Loading Showcases',
+                description: showcaseResult.error,
+                variant: 'destructive',
+            });
+        }
         setLoading(false);
       }
-      loadRegistrations();
+      loadData();
     }
   }, [isAuthenticated, toast]);
 
@@ -66,7 +81,7 @@ export default function AdminPage() {
           <Card className="w-full max-w-sm">
             <CardHeader>
               <CardTitle className="text-2xl">Admin Access</CardTitle>
-              <CardDescription>Enter the password to view registrations.</CardDescription>
+              <CardDescription>Enter the password to view submissions.</CardDescription>
             </CardHeader>
             <CardContent>
               <form onSubmit={handleLogin} className="space-y-4">
@@ -88,51 +103,82 @@ export default function AdminPage() {
     );
   }
 
+  const renderTable = (data: Submission[], type: 'registration' | 'showcase') => {
+      const mainKeys = type === 'registration' 
+        ? ['full_name', 'email'] 
+        : ['projectName', 'presenterName', 'presenterEmail'];
+
+      return (
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Submission Date</TableHead>
+              {mainKeys.map(key => <TableHead key={key} className="capitalize">{key.replace(/([A-Z])/g, ' $1').trim()}</TableHead>)}
+              <TableHead>Other Details</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {data.map((item) => (
+              <TableRow key={item.id}>
+                <TableCell>{new Date(item.submittedAt).toLocaleString()}</TableCell>
+                {mainKeys.map(key => <TableCell key={key}>{item[key] || 'N/A'}</TableCell>)}
+                <TableCell>
+                  {Object.entries(item)
+                    .filter(([key]) => !['id', 'submittedAt', ...mainKeys].includes(key))
+                    .map(([key, value]) => (
+                      <div key={key} className="text-xs">
+                        <span className="font-semibold capitalize">{key.replace(/([A-Z])/g, ' $1').replace(/_/g, ' ').trim()}:</span> {String(value)}
+                      </div>
+                    ))}
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      )
+  }
+
   return (
     <div className="container mx-auto py-10">
-      <h1 className="text-3xl font-bold mb-6 text-primary">Event Registrations</h1>
-      <Card>
-        <CardContent className="pt-6">
-          {loading ? (
-            <div className="space-y-4">
-              <Skeleton className="h-12 w-full" />
-              <Skeleton className="h-12 w-full" />
-              <Skeleton className="h-12 w-full" />
-            </div>
-          ) : registrations.length > 0 ? (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Submission Date</TableHead>
-                  <TableHead>Full Name</TableHead>
-                  <TableHead>Email</TableHead>
-                  <TableHead>Details</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {registrations.map((reg) => (
-                  <TableRow key={reg.id}>
-                    <TableCell>{new Date(reg.submittedAt).toLocaleString()}</TableCell>
-                    <TableCell>{reg.full_name || 'N/A'}</TableCell>
-                    <TableCell>{reg.email || 'N/A'}</TableCell>
-                    <TableCell>
-                      {Object.entries(reg)
-                        .filter(([key]) => !['id', 'submittedAt', 'full_name', 'email'].includes(key))
-                        .map(([key, value]) => (
-                          <div key={key} className="text-xs">
-                            <span className="font-semibold capitalize">{key.replace(/_/g, ' ')}:</span> {String(value)}
-                          </div>
-                        ))}
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          ) : (
-            <p className="text-center text-muted-foreground">No registrations yet.</p>
-          )}
-        </CardContent>
-      </Card>
+      <h1 className="text-3xl font-bold mb-6 text-primary">Event Submissions</h1>
+      <Tabs defaultValue="registrations">
+        <TabsList className="grid w-full grid-cols-2">
+          <TabsTrigger value="registrations">Registrations ({registrations.length})</TabsTrigger>
+          <TabsTrigger value="showcases">Project Showcases ({showcases.length})</TabsTrigger>
+        </TabsList>
+        <TabsContent value="registrations">
+          <Card>
+            <CardContent className="pt-6">
+              {loading ? (
+                 <div className="space-y-4">
+                    <Skeleton className="h-12 w-full" />
+                    <Skeleton className="h-12 w-full" />
+                 </div>
+              ) : registrations.length > 0 ? (
+                renderTable(registrations, 'registration')
+              ) : (
+                <p className="text-center text-muted-foreground py-8">No registrations yet.</p>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+        <TabsContent value="showcases">
+          <Card>
+            <CardContent className="pt-6">
+              {loading ? (
+                <div className="space-y-4">
+                  <Skeleton className="h-12 w-full" />
+                  <Skeleton className="h-12 w-full" />
+                </div>
+              ) : showcases.length > 0 ? (
+                renderTable(showcases, 'showcase')
+              ) : (
+                <p className="text-center text-muted-foreground py-8">No project showcases submitted yet.</p>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
       <Toaster />
     </div>
   );
