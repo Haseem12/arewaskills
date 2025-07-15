@@ -87,6 +87,7 @@ export default function PaymentPage() {
           setStep('confirm');
         } else if (result.data.status === 'payment_pending') {
           if (result.data.paymentMethod) {
+            methodForm.setValue('method', result.data.paymentMethod);
             setStep('details');
           } else {
             setStep('method');
@@ -218,8 +219,8 @@ export default function PaymentPage() {
   
   const renderPaymentDetails = () => {
     if (!submission) return null;
-    const isBankTransfer = submission.paymentMethod === 'bank_transfer';
-    const isBankBranch = submission.paymentMethod === 'bank_branch';
+    const isBankTransfer = submission.paymentMethod === 'bank_transfer' || methodForm.getValues('method') === 'bank_transfer';
+    const isBankBranch = submission.paymentMethod === 'bank_branch' || methodForm.getValues('method') === 'bank_branch';
     const name = submission.type === 'registration' ? submission.full_name : submission.presenterName;
 
     return (
@@ -322,13 +323,13 @@ export default function PaymentPage() {
             <div className="mt-6 flex flex-col sm:flex-row gap-4 justify-center">
                 <Button asChild>
                     <Link href={`/ticket?id=${submission?.id}`}>
-                        <Ticket />
+                        <Ticket className="mr-2" />
                         Print Your Ticket
                     </Link>
                 </Button>
                 <Button asChild variant="secondary">
                      <Link href={`/badge?id=${submission?.id}`}>
-                        <Share2 />
+                        <Share2 className="mr-2" />
                         Create Social Badge
                     </Link>
                 </Button>

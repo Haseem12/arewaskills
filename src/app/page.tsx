@@ -1,132 +1,122 @@
+
 'use client';
 
-import { useState, useEffect } from 'react';
+import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Logo } from '@/components/logo';
-import Image from 'next/image';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-  DialogTrigger,
-} from '@/components/ui/dialog';
-import { RegistrationForm } from '@/components/registration-form';
-import { ShowcaseForm } from '@/components/showcase-form';
-import type { FormConfig } from '@/ai/flows/dynamic-form-generation';
-import { generateFormFields } from '@/ai/flows/dynamic-form-generation';
-import { Skeleton } from '@/components/ui/skeleton';
-import { Toaster } from '@/components/ui/toaster';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { ArrowRight, BrainCircuit, Code, Rocket } from 'lucide-react';
 
 export default function Home() {
-  const [formConfig, setFormConfig] = useState<FormConfig | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [isRegisterDialogOpen, setIsRegisterDialogOpen] = useState(false);
-  const [isShowcaseDialogOpen, setIsShowcaseDialogOpen] = useState(false);
-
-  useEffect(() => {
-    async function loadForm() {
-      try {
-        const config = await generateFormFields({
-          formDescription: 'A registration form for a tech conference for developers and AI enthusiasts in Northern Nigeria. It should ask for full name, email, phone number, company/organization, job title, years of experience as a number input, and a text area for what they hope to learn. Make the phone number optional.',
-        });
-        setFormConfig(config);
-      } catch (error) {
-        console.error('Failed to generate form fields:', error);
-      } finally {
-        setLoading(false);
-      }
-    }
-    loadForm();
-  }, []);
-  
-  const handleRegistrationSuccess = () => {
-    setIsRegisterDialogOpen(false);
-  };
-
-  const handleShowcaseSuccess = () => {
-    setIsShowcaseDialogOpen(false);
-  }
-
   return (
-    <>
-      <main className="min-h-screen bg-background text-foreground font-body">
-        <div className="relative h-screen w-full">
-          <Image
-            src="/arewadev.png"
-            alt="Arewa Devs Community"
-            fill
-            className="object-cover opacity-20"
-            priority
-          />
-          <div className="absolute inset-0 flex flex-col items-center justify-center bg-gradient-to-t from-background via-background/80 to-transparent p-4">
-            <div className="flex items-center gap-4 text-center md:text-left">
-              <Logo className="h-20 w-20 md:h-24 md:w-24 flex-shrink-0" />
-              <div>
-                <h1 className="text-4xl md:text-6xl font-headline font-bold text-primary">Arewa Tech Connect</h1>
-                <p className="text-lg md:text-xl text-muted-foreground mt-1">Dev & AI Hangout</p>
-              </div>
-            </div>
-            <p className="mt-8 max-w-2xl text-center text-lg text-muted-foreground">
-              An exclusive gathering of tech enthusiasts and professionals in Northern Nigeria. Join us to connect, learn, and showcase your work.
+    <main className="min-h-screen bg-background text-foreground font-body">
+      {/* Hero Section */}
+      <section className="relative flex flex-col items-center justify-center min-h-[70vh] text-center p-4 bg-gradient-to-b from-primary/5 to-transparent">
+         <div className="absolute top-0 left-0 w-full h-full bg-[radial-gradient(ellipse_80%_80%_at_50%_-20%,rgba(var(--primary-rgb),0.1),rgba(255,255,255,0))] -z-10"></div>
+        <Logo className="h-24 w-24 mb-6" />
+        <h1 className="text-4xl md:text-6xl font-headline font-bold text-primary">
+          Skills Arewa
+        </h1>
+        <p className="mt-4 max-w-3xl text-lg md:text-xl text-muted-foreground">
+          Empowering Northern Nigeria with transformative skills in Technology, Development, and Artificial Intelligence.
+        </p>
+        <div className="mt-10 flex flex-col sm:flex-row gap-4">
+          <Button asChild size="lg" className="text-lg py-7 px-8">
+            <Link href="#initiatives">Explore Initiatives</Link>
+          </Button>
+          <Button asChild size="lg" variant="outline" className="text-lg py-7 px-8">
+            <a href="mailto:contact@skillsarewa.com">Get in Touch</a>
+          </Button>
+        </div>
+      </section>
+
+      {/* About Section */}
+      <section id="about" className="py-16 md:py-24 px-4 container mx-auto">
+        <div className="max-w-4xl mx-auto text-center">
+            <h2 className="text-3xl font-bold text-primary">Our Vision</h2>
+            <p className="mt-4 text-lg text-muted-foreground">
+                At Skills Arewa, our mission is to bridge the knowledge gap and foster a vibrant ecosystem of tech innovators, developers, and leaders across Northern Nigeria. We believe in the power of education and community to unlock the immense potential of the Arewa region and drive its digital transformation.
             </p>
-            <div className="mt-10 flex flex-col sm:flex-row gap-4">
-              <Dialog open={isRegisterDialogOpen} onOpenChange={setIsRegisterDialogOpen}>
-                <DialogTrigger asChild>
-                  <Button size="lg" className="text-lg py-7 px-8 transform hover:scale-105 transition-transform duration-300">
-                    Join Us
-                  </Button>
-                </DialogTrigger>
-                <DialogContent className="sm:max-w-[425px] max-h-[90vh] overflow-y-auto">
-                  <DialogHeader>
-                    <DialogTitle className="text-2xl text-primary">Register for Arewa Tech Connect</DialogTitle>
-                    <DialogDescription>
-                      Fill out the form below to secure your spot at the event.
-                    </DialogDescription>
-                  </DialogHeader>
-                  <div className="py-4">
-                    {loading ? (
-                       <div className="space-y-4">
-                        <Skeleton className="h-10 w-full" />
-                        <Skeleton className="h-10 w-full" />
-                        <Skeleton className="h-24 w-full" />
-                        <Skeleton className="h-12 w-full" />
-                       </div>
-                    ) : formConfig ? (
-                      <RegistrationForm formConfig={formConfig} onRegistrationSuccess={handleRegistrationSuccess} />
-                    ) : (
-                      <p className="text-destructive">Failed to load registration form. Please try again later.</p>
-                    )}
-                  </div>
-                </DialogContent>
-              </Dialog>
-              <Button asChild size="lg" variant="outline" className="text-lg py-7 px-8">
-                <a href="mailto:partners@arewatechconnect.com">Partner with Us</a>
-              </Button>
-              <Dialog open={isShowcaseDialogOpen} onOpenChange={setIsShowcaseDialogOpen}>
-                <DialogTrigger asChild>
-                  <Button size="lg" variant="outline" className="text-lg py-7 px-8">
-                    Showcase a Project
-                  </Button>
-                </DialogTrigger>
-                <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto">
-                   <DialogHeader>
-                    <DialogTitle className="text-2xl text-primary">Showcase Your Project</DialogTitle>
-                    <DialogDescription>
-                      Submit your project to be featured at the event.
-                    </DialogDescription>
-                  </DialogHeader>
-                  <div className="py-4">
-                    <ShowcaseForm onShowcaseSuccess={handleShowcaseSuccess}/>
-                  </div>
-                </DialogContent>
-              </Dialog>
-            </div>
+        </div>
+      </section>
+
+      {/* Focus Areas Section */}
+       <section id="focus" className="py-16 md:py-24 px-4 bg-muted/40">
+        <div className="container mx-auto">
+          <h2 className="text-3xl font-bold text-primary text-center mb-12">What We Do</h2>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            <Card className="text-center hover:shadow-xl transition-shadow duration-300">
+                <CardHeader>
+                    <div className="mx-auto bg-primary/10 rounded-full p-4 w-fit mb-4">
+                        <Code className="h-10 w-10 text-primary" />
+                    </div>
+                    <CardTitle>Software Development</CardTitle>
+                </CardHeader>
+                <CardContent>
+                    <p className="text-muted-foreground">Hands-on training, workshops, and mentorship programs for aspiring and professional developers.</p>
+                </CardContent>
+            </Card>
+            <Card className="text-center hover:shadow-xl transition-shadow duration-300">
+                <CardHeader>
+                    <div className="mx-auto bg-primary/10 rounded-full p-4 w-fit mb-4">
+                        <BrainCircuit className="h-10 w-10 text-primary" />
+                    </div>
+                    <CardTitle>Artificial Intelligence</CardTitle>
+                </CardHeader>
+                <CardContent>
+                    <p className="text-muted-foreground">Demystifying AI through practical learning, from foundational concepts to advanced applications.</p>
+                </CardContent>
+            </Card>
+            <Card className="text-center hover:shadow-xl transition-shadow duration-300">
+                <CardHeader>
+                     <div className="mx-auto bg-primary/10 rounded-full p-4 w-fit mb-4">
+                        <Rocket className="h-10 w-10 text-primary" />
+                    </div>
+                    <CardTitle>Tech Community</CardTitle>
+                </CardHeader>
+                <CardContent>
+                    <p className="text-muted-foreground">Building a strong, collaborative community through meetups, hackathons, and conferences.</p>
+                </CardContent>
+            </Card>
           </div>
         </div>
-      </main>
-      <Toaster />
-    </>
+       </section>
+      
+       {/* Initiatives Section */}
+       <section id="initiatives" className="py-16 md:py-24 px-4">
+            <div className="container mx-auto">
+                 <div className="max-w-4xl mx-auto text-center">
+                    <h2 className="text-3xl font-bold text-primary">Our Flagship Initiative</h2>
+                    <p className="mt-4 text-lg text-muted-foreground">
+                       Arewa Tech Connect is our premier event, bringing together the brightest minds in tech for a day of learning, networking, and innovation.
+                    </p>
+                </div>
+                <div className="mt-12 max-w-2xl mx-auto">
+                    <Card className="bg-gradient-to-br from-primary/10 to-primary/20 overflow-hidden">
+                       <CardHeader>
+                         <CardTitle className="text-center text-primary text-2xl">Arewa Tech Connect</CardTitle>
+                       </CardHeader>
+                       <CardContent className="text-center">
+                            <p className="text-muted-foreground mb-6">The Dev & AI Hangout for Northern Nigeria's tech community.</p>
+                            <Button asChild>
+                                <Link href="/event">
+                                    Visit Event Page <ArrowRight className="ml-2" />
+                                </Link>
+                            </Button>
+                       </CardContent>
+                    </Card>
+                </div>
+            </div>
+       </section>
+
+       {/* Footer */}
+       <footer className="py-8 bg-card border-t">
+            <div className="container mx-auto text-center text-muted-foreground">
+                <p>&copy; {new Date().getFullYear()} Skills Arewa. All Rights Reserved.</p>
+                <p>Driving the future of tech in Northern Nigeria.</p>
+            </div>
+       </footer>
+
+    </main>
   );
 }

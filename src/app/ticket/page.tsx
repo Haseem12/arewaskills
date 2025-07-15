@@ -90,7 +90,7 @@ function TicketContent() {
   }
 
   if (!submission) {
-    return null;
+    return null; // Keep this to handle the case where submission is null after loading and no error
   }
   
   const attendeeName = submission.type === 'registration' ? submission.full_name : submission.presenterName;
