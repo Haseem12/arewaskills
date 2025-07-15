@@ -11,6 +11,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import { useMemo, useTransition } from 'react';
 import { Loader2 } from 'lucide-react';
+import { saveRegistration } from '@/app/actions/registration-actions';
 
 interface RegistrationFormProps {
   formConfig: FormConfig;
@@ -108,21 +109,28 @@ export function RegistrationForm({ formConfig, onRegistrationSuccess }: Registra
 
   function onSubmit(values: z.infer<typeof formSchema>) {
     startTransition(async () => {
-      console.log(values);
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      const result = await saveRegistration(values);
 
-      form.reset();
-      
-      toast({
-        title: "Registration Successful!",
-        description: "Thank you for registering. We've received your information.",
-        variant: "default",
-        duration: 5000,
-      });
-      
-      if(onRegistrationSuccess) {
-        onRegistrationSuccess();
+      if (result.success) {
+        form.reset();
+        
+        toast({
+          title: "Registration Successful!",
+          description: "Thank you for registering. We've received your information.",
+          variant: "default",
+          duration: 5000,
+        });
+        
+        if(onRegistrationSuccess) {
+          onRegistrationSuccess();
+        }
+      } else {
+        toast({
+          title: "Registration Failed",
+          description: result.error,
+          variant: "destructive",
+          duration: 5000,
+        });
       }
     });
   }

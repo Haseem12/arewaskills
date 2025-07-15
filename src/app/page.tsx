@@ -13,6 +13,7 @@ import {
   DialogTrigger,
 } from '@/components/ui/dialog';
 import { RegistrationForm } from '@/components/registration-form';
+import { ShowcaseForm } from '@/components/showcase-form';
 import type { FormConfig } from '@/ai/flows/dynamic-form-generation';
 import { generateFormFields } from '@/ai/flows/dynamic-form-generation';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -21,7 +22,8 @@ import { Toaster } from '@/components/ui/toaster';
 export default function Home() {
   const [formConfig, setFormConfig] = useState<FormConfig | null>(null);
   const [loading, setLoading] = useState(true);
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isRegisterDialogOpen, setIsRegisterDialogOpen] = useState(false);
+  const [isShowcaseDialogOpen, setIsShowcaseDialogOpen] = useState(false);
 
   useEffect(() => {
     async function loadForm() {
@@ -40,8 +42,12 @@ export default function Home() {
   }, []);
   
   const handleRegistrationSuccess = () => {
-    setIsDialogOpen(false);
+    setIsRegisterDialogOpen(false);
   };
+
+  const handleShowcaseSuccess = () => {
+    setIsShowcaseDialogOpen(false);
+  }
 
   return (
     <>
@@ -66,7 +72,7 @@ export default function Home() {
               An exclusive gathering of tech enthusiasts and professionals in Northern Nigeria. Join us to connect, learn, and showcase your work.
             </p>
             <div className="mt-10 flex flex-col sm:flex-row gap-4">
-              <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+              <Dialog open={isRegisterDialogOpen} onOpenChange={setIsRegisterDialogOpen}>
                 <DialogTrigger asChild>
                   <Button size="lg" className="text-lg py-7 px-8 transform hover:scale-105 transition-transform duration-300">
                     Join Us
@@ -98,9 +104,24 @@ export default function Home() {
               <Button asChild size="lg" variant="outline" className="text-lg py-7 px-8">
                 <a href="mailto:partners@arewatechconnect.com">Partner with Us</a>
               </Button>
-              <Button asChild size="lg" variant="outline" className="text-lg py-7 px-8">
-                <a href="mailto:showcase@arewatechconnect.com">Showcase a Project</a>
-              </Button>
+              <Dialog open={isShowcaseDialogOpen} onOpenChange={setIsShowcaseDialogOpen}>
+                <DialogTrigger asChild>
+                  <Button size="lg" variant="outline" className="text-lg py-7 px-8">
+                    Showcase a Project
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto">
+                   <DialogHeader>
+                    <DialogTitle className="text-2xl text-primary">Showcase Your Project</DialogTitle>
+                    <DialogDescription>
+                      Submit your project to be featured at the event.
+                    </DialogDescription>
+                  </DialogHeader>
+                  <div className="py-4">
+                    <ShowcaseForm onShowcaseSuccess={handleShowcaseSuccess}/>
+                  </div>
+                </DialogContent>
+              </Dialog>
             </div>
           </div>
         </div>
