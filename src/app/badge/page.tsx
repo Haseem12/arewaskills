@@ -10,6 +10,7 @@ import { Input } from '@/components/ui/input';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Loader2, AlertTriangle, Upload, Download, RotateCcw } from 'lucide-react';
+import { Logo } from '@/components/logo';
 
 type Submission = {
     id: string;
@@ -27,8 +28,9 @@ function BadgeGenerator() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [userImage, setUserImage] = useState<HTMLImageElement | null>(null);
+  const [logoImage, setLogoImage] = useState<HTMLImageElement | null>(null);
 
-  const drawBadge = (submissionData: Submission, image: HTMLImageElement | null) => {
+  const drawBadge = (submissionData: Submission, image: HTMLImageElement | null, logo: HTMLImageElement | null) => {
     const canvas = canvasRef.current;
     if (!canvas) return;
 
@@ -43,38 +45,49 @@ function BadgeGenerator() {
     const name = submissionData.type === 'registration' ? submissionData.full_name : submissionData.presenterName;
     const organization = submissionData.type === 'registration' ? submissionData.company_organization : 'Project Showcase';
 
-
     // Background
-    ctx.fillStyle = "hsl(180, 60%, 95%)"; // card
+    ctx.fillStyle = "#0A0A0A"; // Dark background
     ctx.fillRect(0, 0, width, height);
     
-    // Header section wave
-    ctx.fillStyle = "hsl(180, 100%, 25.1%)"; // primary
+    // Silk lines for innovation
+    ctx.save();
+    ctx.globalAlpha = 0.3;
+    ctx.strokeStyle = "hsl(180, 100%, 25.1%)"; // primary
+    ctx.lineWidth = 3;
     ctx.beginPath();
-    ctx.moveTo(0, 0);
-    ctx.lineTo(width, 0);
-    ctx.lineTo(width, 250);
-    ctx.quadraticCurveTo(width / 2, 350, 0, 250);
-    ctx.closePath();
-    ctx.fill();
+    ctx.moveTo(-100, 200);
+    ctx.bezierCurveTo(width * 0.25, 400, width * 0.75, 0, width + 100, 300);
+    ctx.stroke();
 
-    // Header text
+    ctx.strokeStyle = "hsl(180, 47.1%, 64.3%)"; // accent
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(-100, 800);
+    ctx.bezierCurveTo(width * 0.25, 600, width * 0.75, 1000, width + 100, 700);
+    ctx.stroke();
+    ctx.restore();
+
+    // Header with Logo
+    if (logo) {
+      ctx.drawImage(logo, 80, 80, 120, 120);
+    }
     ctx.fillStyle = 'white';
-    ctx.textAlign = 'center';
-    ctx.font = 'bold 70px Inter, sans-serif';
-    ctx.fillText("Arewa Tech Connect", width / 2, 120);
-    ctx.font = '40px Inter, sans-serif';
-    ctx.fillText("Dev & AI Hangout", width / 2, 190);
+    ctx.textAlign = 'left';
+    ctx.font = 'bold 50px Inter, sans-serif';
+    ctx.fillText("Arewa Tech Connect", 220, 140);
+    ctx.font = '30px Inter, sans-serif';
+    ctx.fillStyle = 'hsl(180, 15%, 94%)'; // secondary-foreground
+    ctx.fillText("Dev & AI Hangout", 220, 185);
 
     // Draw user image placeholder or image
     ctx.save();
     const imageSize = 400;
-    const imageY = 320;
+    const imageY = (height - imageSize) / 2 - 50;
     const imageX = (width - imageSize) / 2;
 
     ctx.beginPath();
     ctx.arc(imageX + imageSize / 2, imageY + imageSize / 2, imageSize / 2 + 10, 0, Math.PI * 2, true);
-    ctx.fillStyle = 'hsl(180, 47.1%, 64.3%)'; // accent
+    ctx.fillStyle = 'hsl(180, 100%, 25.1%)'; // primary
     ctx.fill();
     
     ctx.beginPath();
@@ -83,7 +96,6 @@ function BadgeGenerator() {
     ctx.clip();
     
     if (image) {
-      // draw the image centered and covering the circle
       const hRatio = imageSize / image.width;
       const vRatio = imageSize / image.height;
       const ratio  = Math.max(hRatio, vRatio);
@@ -92,7 +104,7 @@ function BadgeGenerator() {
       ctx.drawImage(image, 0, 0, image.width, image.height,
                             centerShift_x + imageX,centerShift_y + imageY, image.width*ratio, image.height*ratio);
     } else {
-      ctx.fillStyle = '#e0e0e0';
+      ctx.fillStyle = '#1a1a1a';
       ctx.fillRect(imageX, imageY, imageSize, imageSize);
       ctx.fillStyle = '#a0a0a0';
       ctx.font = '30px Inter, sans-serif';
@@ -103,12 +115,11 @@ function BadgeGenerator() {
     ctx.restore();
 
     // Draw text
-    ctx.fillStyle = 'hsl(180, 100%, 20%)'; // primary darker
+    ctx.fillStyle = 'white';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
     
-    // a function to fit text in a box
-    const fitText = (text: string, maxWidth: number, fontSize: number = 80) => {
+    const fitText = (text: string, maxWidth: number, fontSize: number = 90) => {
         if (!text) return text;
         ctx.font = `bold ${fontSize}px Inter, sans-serif`;
         while (ctx.measureText(text).width > maxWidth) {
@@ -118,24 +129,31 @@ function BadgeGenerator() {
         return text;
     }
 
-    const nameY = imageY + imageSize + 100;
+    const nameY = imageY + imageSize + 120;
     const fittedName = fitText(name, width - 160);
     ctx.fillText(fittedName, width / 2, nameY);
     
     if (organization) {
-      const orgY = nameY + 70;
-      ctx.font = '40px Inter, sans-serif';
-      ctx.fillStyle = '#555';
-      const fittedOrg = fitText(organization, width - 160, 40);
-      ctx.fillText(fittedOrg, width / 2, orgY);
+      const orgY = nameY + 80;
+      ctx.font = '50px Inter, sans-serif';
+      ctx.fillStyle = 'hsl(180, 20%, 85%)';
+      ctx.fillText(organization, width / 2, orgY);
     }
     
     // Footer CTA
     const footerY = height - 100;
-    ctx.font = 'bold 60px Inter, sans-serif';
-    ctx.fillStyle = 'hsl(180, 100%, 25.1%)'; // primary
+    ctx.font = 'bold 70px Inter, sans-serif';
+    ctx.fillStyle = 'hsl(180, 47.1%, 64.3%)'; // accent
     ctx.fillText("I'll be there!", width / 2, footerY);
   };
+
+  useEffect(() => {
+    // Pre-load the logo image from an SVG data URL
+    const logoSvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><linearGradient id="tealGradient" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" style="stop-color:hsl(180, 100%, 25.1%)" /><stop offset="100%" style="stop-color:hsl(180, 47.1%, 64.3%)" /></linearGradient></defs><circle cx="50" cy="50" r="48" fill="hsl(var(--card))" stroke="url(#tealGradient)" stroke-width="1.5" /><g stroke="url(#tealGradient)" stroke-width="4" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M50 20 V 35" /><path d="M50 80 V 65" /><path d="M20 50 H 35" /><path d="M80 50 H 65" /><circle cx="50" cy="50" r="15" /><path d="M35 35 A 21.21 21.21 0 0 1 65 65" /><path d="M65 35 A 21.21 21.21 0 0 1 35 65" /></g><circle cx="50" cy="50" r="3" fill="hsl(var(--primary))" /></svg>`;
+    const img = new Image();
+    img.onload = () => setLogoImage(img);
+    img.src = 'data:image/svg+xml;base64,' + btoa(logoSvg);
+  }, []);
 
   useEffect(() => {
     if (!id) {
@@ -149,7 +167,6 @@ function BadgeGenerator() {
         const result = await findSubmissionById(id as string);
         if (result.success && result.data) {
           setSubmission(result.data);
-          drawBadge(result.data, userImage);
         } else {
           setError(result.error || 'Could not find submission.');
         }
@@ -166,10 +183,10 @@ function BadgeGenerator() {
 
   useEffect(() => {
     if (submission) {
-        drawBadge(submission, userImage);
+        drawBadge(submission, userImage, logoImage);
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [userImage, submission]);
+  }, [userImage, submission, logoImage]);
 
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
