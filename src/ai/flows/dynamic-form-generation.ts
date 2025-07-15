@@ -12,7 +12,7 @@ import {z} from 'genkit';
 
 const FormFieldSchema = z.object({
   label: z.string().describe('The label for the input field.'),
-  type: z.string().describe('The HTML input type for the field (e.g., text, email, tel).'),
+  type: z.string().describe('The HTML input type for the field (e.g., text, email, tel, number, textarea).'),
   required: z.boolean().describe('Whether the field is required.'),
   validationRegex: z.string().optional().describe('Optional regex for validating the field.'),
   placeholder: z.string().optional().describe('Optional placeholder text for the input field.'),
@@ -40,13 +40,20 @@ const dynamicFormGenerationPrompt = ai.definePrompt({
   name: 'dynamicFormGenerationPrompt',
   input: {schema: FormGenerationInputSchema},
   output: {schema: FormConfigSchema},
-  prompt: `You are an AI form generator.  You will generate a JSON configuration for a form based on the description provided. The form configuration should include an array of fields, each with a label, type, and whether it is required. Generate HTML5 input types. Generate a validationRegex if appropriate, and placeholder to guide the user.
+  prompt: `You are an AI form generator. You will generate a JSON configuration for a form based on the description provided. The form configuration should include an array of fields, each with a label, type, and whether it is required. Generate appropriate HTML5 input types (like text, email, tel, number, textarea). Generate a validationRegex if appropriate, and placeholder to guide the user.
 
 Form Description: {{{formDescription}}}
 
 Output the form configuration as a JSON object. Do not include any explanation, only the JSON. The JSON should match this Typescript interface:
 
-${FormFieldSchema}`,
+type FormField = {
+  label: string;
+  type: 'text' | 'email' | 'tel' | 'number' | 'textarea';
+  required: boolean;
+  validationRegex?: string;
+  placeholder?: string;
+};
+`,
 });
 
 const dynamicFormGenerationFlow = ai.defineFlow(

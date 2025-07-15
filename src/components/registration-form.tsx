@@ -9,11 +9,12 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
-import { useMemo, useState, useTransition } from 'react';
+import { useMemo, useTransition } from 'react';
 import { Loader2 } from 'lucide-react';
 
 interface RegistrationFormProps {
   formConfig: FormConfig;
+  onRegistrationSuccess?: () => void;
 }
 
 // Helper to create a Zod schema from the form configuration
@@ -21,14 +22,17 @@ function createZodSchema(fields: FormFieldType[]): z.ZodObject<any> {
   const schemaShape: { [key: string]: z.ZodType<any, any> } = {};
 
   fields.forEach(field => {
-    let zodType: z.ZodString | z.ZodOptional<z.ZodString>;
+    let zodType: z.ZodTypeAny;
 
     switch (field.type) {
       case 'email':
-        zodType = z.string({ required_error: `${field.label} is required.` }).email({ message: "Invalid email address." });
+        zodType = z.string().email({ message: "Invalid email address." });
         break;
       case 'tel':
         zodType = z.string().min(10, { message: "Phone number seems too short." });
+        break;
+      case 'number':
+        zodType = z.coerce.number().min(0, { message: "Value must be positive." });
         break;
       default:
         zodType = z.string();
@@ -39,15 +43,13 @@ function createZodSchema(fields: FormFieldType[]): z.ZodObject<any> {
             zodType = zodType.min(1, { message: `${field.label} is required.` });
         }
     } else {
-      zodType = zodType.optional().or(z.literal(''));
+        zodType = zodType.optional().or(z.literal(''));
     }
     
-    if (field.validationRegex) {
+    if (field.validationRegex && zodType instanceof z.ZodString) {
         try {
             const regex = new RegExp(field.validationRegex);
-            if (zodType instanceof z.ZodString) {
-                zodType = zodType.regex(regex, { message: `Invalid format for ${field.label}.` });
-            }
+            zodType = zodType.regex(regex, { message: `Invalid format for ${field.label}.` });
         } catch (e) {
             console.warn(`Invalid regex for ${field.label}: ${field.validationRegex}`);
         }
@@ -87,7 +89,7 @@ function renderField(field: FormFieldType, form: ReturnType<typeof useForm>) {
     )
 }
 
-export function RegistrationForm({ formConfig }: RegistrationFormProps) {
+export function RegistrationForm({ formConfig, onRegistrationSuccess }: RegistrationFormProps) {
   const [isPending, startTransition] = useTransition();
   const { toast } = useToast();
 
@@ -97,8 +99,9 @@ export function RegistrationForm({ formConfig }: RegistrationFormProps) {
     resolver: zodResolver(formSchema),
     defaultValues: formConfig.fields.reduce((acc, field) => {
         const fieldKey = field.label.toLowerCase().replace(/[^a-z0-9]/g, '_');
+        const defaultValue = field.type === 'number' ? undefined : '';
         // @ts-ignore
-        acc[fieldKey] = '';
+        acc[fieldKey] = defaultValue;
         return acc;
     }, {})
   });
@@ -107,22 +110,26 @@ export function RegistrationForm({ formConfig }: RegistrationFormProps) {
     startTransition(async () => {
       console.log(values);
       // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      await new Promise(resolve => setTimeout(resolve, 1000));
 
       form.reset();
       
       toast({
         title: "Registration Successful!",
-        description: "Thank you for registering. We've received your information and will be in touch soon.",
+        description: "Thank you for registering. We've received your information.",
         variant: "default",
         duration: 5000,
       });
+      
+      if(onRegistrationSuccess) {
+        onRegistrationSuccess();
+      }
     });
   }
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
         {formConfig.fields.map(field => renderField(field, form))}
         
         <Button 
