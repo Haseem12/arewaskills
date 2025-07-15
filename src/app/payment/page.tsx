@@ -52,9 +52,17 @@ export default function PaymentPage() {
   // Overall flow state
   const [step, setStep] = useState<'email' | 'method' | 'details' | 'confirm' | 'success'>('email');
 
-  const emailForm = useForm<EmailFormValues>({ resolver: zodResolver(emailSchema) });
-  const methodForm = useForm<PaymentMethodValues>({ resolver: zodResolver(paymentMethodSchema) });
-  const receiptForm = useForm<ReceiptFormValues>({ resolver: zodResolver(receiptSchema) });
+  const emailForm = useForm<EmailFormValues>({
+    resolver: zodResolver(emailSchema),
+    defaultValues: { email: '' },
+  });
+  const methodForm = useForm<PaymentMethodValues>({
+    resolver: zodResolver(paymentMethodSchema),
+  });
+  const receiptForm = useForm<ReceiptFormValues>({
+    resolver: zodResolver(receiptSchema),
+    defaultValues: { receiptNumber: '' },
+  });
 
   const resetState = () => {
     setSubmission(null);
