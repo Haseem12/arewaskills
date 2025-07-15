@@ -58,6 +58,7 @@ export default function PaymentPage() {
   });
   const methodForm = useForm<PaymentMethodValues>({
     resolver: zodResolver(paymentMethodSchema),
+    defaultValues: { method: 'bank_transfer' }
   });
   const receiptForm = useForm<ReceiptFormValues>({
     resolver: zodResolver(receiptSchema),
@@ -170,45 +171,45 @@ export default function PaymentPage() {
       </CardHeader>
       <CardContent>
         <Form {...methodForm}>
-          <form onSubmit={methodForm.handleSubmit(handleMethodSubmit)} className="space-y-6">
-            <FormField
-              control={methodForm.control}
-              name="method"
-              render={({ field }) => (
-                <FormItem className="space-y-3">
-                  <FormControl>
-                    <RadioGroup
-                      onValueChange={field.onChange}
-                      defaultValue={field.value}
-                      className="flex flex-col space-y-1"
-                    >
-                      <FormItem className="flex items-center space-x-3 space-y-0 rounded-md border p-4 hover:bg-accent/50 has-[[data-state=checked]]:bg-accent/50">
-                        <FormControl>
-                          <RadioGroupItem value="bank_transfer" />
-                        </FormControl>
-                        <FormLabel className="font-normal w-full cursor-pointer">
-                          Bank Transfer / USSD
-                        </FormLabel>
-                      </FormItem>
-                      <FormItem className="flex items-center space-x-3 space-y-0 rounded-md border p-4 hover:bg-accent/50 has-[[data-state=checked]]:bg-accent/50">
-                        <FormControl>
-                          <RadioGroupItem value="bank_branch" />
-                        </FormControl>
-                        <FormLabel className="font-normal w-full cursor-pointer">
-                          Pay at Bank Branch
-                        </FormLabel>
-                      </FormItem>
-                    </RadioGroup>
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <Button type="submit" className="w-full" disabled={isPending}>
-              {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              Continue
-            </Button>
-          </form>
+            <form onSubmit={methodForm.handleSubmit(handleMethodSubmit)} className="space-y-6">
+                <FormField
+                control={methodForm.control}
+                name="method"
+                render={({ field }) => (
+                    <FormItem className="space-y-3">
+                    <FormControl>
+                        <RadioGroup
+                        onValueChange={field.onChange}
+                        defaultValue={field.value}
+                        className="flex flex-col space-y-1"
+                        >
+                        <FormItem className="flex items-center space-x-3 space-y-0 rounded-md border p-4 hover:bg-accent/50 has-[[data-state=checked]]:bg-accent/50">
+                            <FormControl>
+                            <RadioGroupItem value="bank_transfer" />
+                            </FormControl>
+                            <FormLabel className="font-normal w-full cursor-pointer">
+                            Bank Transfer / USSD
+                            </FormLabel>
+                        </FormItem>
+                        <FormItem className="flex items-center space-x-3 space-y-0 rounded-md border p-4 hover:bg-accent/50 has-[[data-state=checked]]:bg-accent/50">
+                            <FormControl>
+                            <RadioGroupItem value="bank_branch" />
+                            </FormControl>
+                            <FormLabel className="font-normal w-full cursor-pointer">
+                            Pay at Bank Branch
+                            </FormLabel>
+                        </FormItem>
+                        </RadioGroup>
+                    </FormControl>
+                    <FormMessage />
+                    </FormItem>
+                )}
+                />
+                <Button type="submit" className="w-full" disabled={isPending}>
+                {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                Continue
+                </Button>
+            </form>
         </Form>
       </CardContent>
     </Card>
