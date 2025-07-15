@@ -39,32 +39,50 @@ function BadgeGenerator() {
     canvas.width = width;
     canvas.height = height;
 
-    // Create a teal gradient background
-    const gradient = ctx.createLinearGradient(0, 0, width, height);
-    gradient.addColorStop(0, "hsl(180, 100%, 25.1%)");
-    gradient.addColorStop(1, "hsl(180, 47.1%, 64.3%)");
-    ctx.fillStyle = gradient;
+    // Background
+    ctx.fillStyle = "hsl(180, 60%, 95%)";
     ctx.fillRect(0, 0, width, height);
-    
-    // Add a subtle pattern from the logo
-    ctx.strokeStyle = "rgba(255, 255, 255, 0.1)";
-    ctx.lineWidth = 2;
+
+    // Header section
+    const headerHeight = 250;
+    const gradient = ctx.createLinearGradient(0, 0, width, headerHeight);
+    gradient.addColorStop(0, "hsl(180, 100%, 20%)");
+    gradient.addColorStop(1, "hsl(180, 100%, 25.1%)");
+    ctx.fillStyle = gradient;
+    ctx.fillRect(0, 0, width, headerHeight);
+
+    // Header text
+    ctx.fillStyle = 'white';
+    ctx.textAlign = 'center';
+    ctx.font = 'bold 70px Inter, sans-serif';
+    ctx.fillText("Arewa Tech Connect", width / 2, 120);
+    ctx.font = '40px Inter, sans-serif';
+    ctx.fillText("Dev & AI Hangout", width / 2, 180);
+
+
+    // White content area
+    const cardY = headerHeight - 50;
+    const cardHeight = height - cardY - 50;
+    ctx.fillStyle = 'white';
+    ctx.shadowColor = 'rgba(0, 0, 0, 0.1)';
+    ctx.shadowBlur = 20;
+    ctx.shadowOffsetY = 5;
     ctx.beginPath();
-    ctx.arc(width/2, height/2, 250, 0, 2 * Math.PI);
-    ctx.stroke();
-    
-    // Draw white container
-    ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
-    ctx.beginPath();
-    ctx.roundRect(50, 50, width - 100, height - 100, 30);
+    ctx.roundRect(50, cardY, width - 100, cardHeight, 30);
     ctx.fill();
+    ctx.shadowColor = 'transparent'; // reset shadow
 
     // Draw user image placeholder or image
     ctx.save();
     const imageSize = 400;
     const imageX = (width - imageSize) / 2;
-    const imageY = 150;
+    const imageY = cardY + 80;
 
+    ctx.beginPath();
+    ctx.arc(imageX + imageSize/2, imageY + imageSize/2, imageSize/2 + 10, 0, Math.PI * 2, true);
+    ctx.fillStyle = 'hsl(180, 47.1%, 64.3%)';
+    ctx.fill();
+    
     ctx.beginPath();
     ctx.arc(imageX + imageSize/2, imageY + imageSize/2, imageSize/2, 0, Math.PI * 2, true);
     ctx.closePath();
@@ -85,7 +103,7 @@ function BadgeGenerator() {
       ctx.fillStyle = '#a0a0a0';
       ctx.font = '30px Inter, sans-serif';
       ctx.textAlign = 'center';
-      ctx.fillText('Upload Your Photo', width / 2, height / 2 - 50);
+      ctx.fillText('Upload Your Photo', width / 2, imageY + imageSize/2);
     }
     ctx.restore();
 
@@ -94,18 +112,22 @@ function BadgeGenerator() {
     ctx.textAlign = 'center';
     
     ctx.font = 'bold 80px Inter, sans-serif';
-    ctx.fillText(name, width / 2, 680, width - 200);
+    // a function to fit text in a box
+    const fitText = (text: string, maxWidth: number) => {
+        let fontSize = 80;
+        ctx.font = `bold ${fontSize}px Inter, sans-serif`;
+        while (ctx.measureText(text).width > maxWidth) {
+            fontSize--;
+            ctx.font = `bold ${fontSize}px Inter, sans-serif`;
+        }
+        return text;
+    }
+    const fittedName = fitText(name, width - 250);
+    ctx.fillText(fittedName, width / 2, imageY + imageSize + 150);
 
-    ctx.font = '40px Inter, sans-serif';
-    ctx.fillText("is joining", width / 2, 750);
-    
-    ctx.font = 'bold 50px Inter, sans-serif';
-    ctx.fillStyle = 'hsl(180, 100%, 25.1%)';
-    ctx.fillText("Arewa Tech Connect", width / 2, 850);
-    
-    ctx.font = '30px Inter, sans-serif';
-    ctx.fillStyle = '#333';
-    ctx.fillText("Dev & AI Hangout", width / 2, 900);
+    ctx.font = '50px Inter, sans-serif';
+    ctx.fillStyle = '#555';
+    ctx.fillText("I'll be there!", width / 2, imageY + imageSize + 230);
   };
 
   useEffect(() => {
@@ -184,12 +206,14 @@ function BadgeGenerator() {
         </Alert>
     );
   }
+  
+  const name = submission?.type === 'registration' ? submission.full_name : submission?.presenterName;
 
   return (
     <Card className="w-full max-w-xl">
         <CardHeader>
             <CardTitle>Create Your Social Badge</CardTitle>
-            <CardDescription>Share your excitement! Upload your photo and download your personalized badge.</CardDescription>
+            <CardDescription>Share your excitement! Upload your photo and download your personalized badge for {name}.</CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
             <div className="aspect-square w-full rounded-lg border bg-muted/30">
