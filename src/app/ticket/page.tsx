@@ -59,9 +59,6 @@ function TicketContent() {
     window.print();
   };
   
-  const attendeeName = submission?.type === 'registration' ? submission.full_name : submission.presenterName;
-  const attendeeEmail = submission?.type === 'registration' ? submission.email : submission.presenterEmail;
-
   if (loading) {
     return (
         <div className="w-full max-w-lg mx-auto p-4">
@@ -95,6 +92,9 @@ function TicketContent() {
   if (!submission) {
     return null;
   }
+  
+  const attendeeName = submission.type === 'registration' ? submission.full_name : submission.presenterName;
+  const attendeeEmail = submission.type === 'registration' ? submission.email : submission.presenterEmail;
 
   return (
     <div className="w-full max-w-lg mx-auto p-4 print:p-0">
