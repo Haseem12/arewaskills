@@ -85,16 +85,52 @@ export async function getShowcases() {
     }
 }
 
-export async function updateSubmissionStatus(ids: string[], status: 'payment_pending' | 'paid') {
+export async function updateSubmissionStatus(id: string, status: 'payment_pending' | 'awaiting_confirmation' | 'paid', details?: Record<string, any>) {
+    try {
+        const registrations = await readData(registrationsFilePath);
+        const showcases = await readData(showcasesFilePath);
+
+        let found = false;
+        const updatedRegistrations = registrations.map(reg => {
+            if (reg.id === id) {
+                found = true;
+                return { ...reg, status, ...details };
+            }
+            return reg;
+        });
+        
+        const updatedShowcases = showcases.map(shw => {
+            if (shw.id === id) {
+                found = true;
+                return { ...shw, status, ...details };
+            }
+            return shw;
+        });
+
+        if (!found) {
+            throw new Error("Submission not found.");
+        }
+
+        await writeData(registrationsFilePath, updatedRegistrations);
+        await writeData(showcasesFilePath, updatedShowcases);
+
+        return { success: true };
+    } catch (error: any) {
+        return { success: false, error: error.message };
+    }
+}
+
+
+export async function markSubmissionsAsPending(ids: string[]) {
     try {
         const registrations = await readData(registrationsFilePath);
         const showcases = await readData(showcasesFilePath);
 
         const updatedRegistrations = registrations.map(reg => 
-            ids.includes(reg.id) ? { ...reg, status } : reg
+            ids.includes(reg.id) ? { ...reg, status: 'payment_pending' } : reg
         );
         const updatedShowcases = showcases.map(shw => 
-            ids.includes(shw.id) ? { ...shw, status } : shw
+            ids.includes(shw.id) ? { ...shw, status: 'payment_pending' } : shw
         );
 
         await writeData(registrationsFilePath, updatedRegistrations);

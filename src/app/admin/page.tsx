@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { getRegistrations, getShowcases, updateSubmissionStatus } from '@/app/actions/registration-actions';
+import { getRegistrations, getShowcases, markSubmissionsAsPending, updateSubmissionStatus } from '@/app/actions/registration-actions';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -11,13 +11,15 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Toaster } from '@/components/ui/toaster';
 import { useToast } from '@/hooks/use-toast';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Mail, Loader2 } from 'lucide-react';
+import { Mail, Loader2, CheckCircle, Clock } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 
 type Submission = {
   id: string;
   submittedAt: string;
-  status?: 'payment_pending' | 'paid';
+  status?: 'payment_pending' | 'awaiting_confirmation' | 'paid';
+  paymentMethod?: string;
+  receiptNumber?: string;
   [key: string]: any;
 };
 
@@ -30,6 +32,8 @@ export default function AdminPage() {
   const [showcases, setShowcases] = useState<Submission[]>([]);
   const [loading, setLoading] = useState(true);
   const [isSending, setIsSending] = useState(false);
+  const [confirmingPaymentId, setConfirmingPaymentId] = useState<string | null>(null);
+
   const { toast } = useToast();
 
   const [selectedRegistrations, setSelectedRegistrations] = useState<Set<string>>(new Set());
@@ -93,7 +97,7 @@ export default function AdminPage() {
         return;
     }
     
-    const result = await updateSubmissionStatus(selectedIds, 'payment_pending');
+    const result = await markSubmissionsAsPending(selectedIds);
 
     if(result.success) {
         toast({
@@ -109,6 +113,21 @@ export default function AdminPage() {
     setIsSending(false);
   };
   
+  const handleConfirmPayment = async (id: string) => {
+    setConfirmingPaymentId(id);
+    const result = await updateSubmissionStatus(id, 'paid');
+    if (result.success) {
+      toast({
+        title: "Payment Confirmed",
+        description: "User has been marked as paid.",
+      });
+      await loadData();
+    } else {
+      toast({ title: "Error", description: result.error, variant: "destructive"});
+    }
+    setConfirmingPaymentId(null);
+  }
+
   const handleSelect = (id: string, type: 'registration' | 'showcase') => {
       const stateUpdater = type === 'registration' ? setSelectedRegistrations : setSelectedShowcases;
       stateUpdater(prev => {
@@ -127,13 +146,98 @@ export default function AdminPage() {
     const selectedSource = type === 'registration' ? selectedRegistrations : selectedShowcases;
     const stateUpdater = type === 'registration' ? setSelectedRegistrations : setSelectedShowcases;
 
-    if (selectedSource.size === dataSource.length) {
+    const allIds = dataSource.filter(item => !item.status || item.status !== 'paid').map(item => item.id);
+
+    if (selectedSource.size === allIds.length) {
         stateUpdater(new Set());
     } else {
-        stateUpdater(new Set(dataSource.map(item => item.id)));
+        stateUpdater(new Set(allIds));
     }
   }
 
+  const renderStatusBadge = (status?: string) => {
+    switch(status) {
+        case 'paid':
+            return <Badge variant="default" className="bg-green-600">Paid</Badge>;
+        case 'awaiting_confirmation':
+            return <Badge variant="destructive">Awaiting Confirmation</Badge>;
+        case 'payment_pending':
+            return <Badge variant="secondary">Pending Payment</Badge>;
+        default:
+            return <Badge variant="outline">New</Badge>;
+    }
+  }
+
+  const renderTable = (data: Submission[], type: 'registration' | 'showcase') => {
+      const mainKeys = type === 'registration' 
+        ? ['full_name', 'email'] 
+        : ['projectName', 'presenterName', 'presenterEmail'];
+        
+      const selectedSet = type === 'registration' ? selectedRegistrations : selectedShowcases;
+
+      return (
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead className="w-[50px]">
+                <Checkbox 
+                  onCheckedChange={() => handleSelectAll(type)}
+                  checked={data.length > 0 && selectedSet.size === data.filter(item => !item.status || item.status !== 'paid').length && selectedSet.size > 0}
+                  disabled={data.filter(item => !item.status || item.status !== 'paid').length === 0}
+                />
+              </TableHead>
+              <TableHead>Submission Date</TableHead>
+              {mainKeys.map(key => <TableHead key={key} className="capitalize">{key.replace(/_/g, ' ')}</TableHead>)}
+              <TableHead>Status</TableHead>
+              <TableHead>Payment Details</TableHead>
+              <TableHead>Other Info</TableHead>
+              <TableHead className="text-right">Action</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {data.map((item) => (
+              <TableRow key={item.id} data-state={selectedSet.has(item.id) ? 'selected' : ''}>
+                <TableCell>
+                  <Checkbox 
+                    onCheckedChange={() => handleSelect(item.id, type)}
+                    checked={selectedSet.has(item.id)}
+                    disabled={!!item.status && item.status === 'paid'}
+                  />
+                </TableCell>
+                <TableCell>{new Date(item.submittedAt).toLocaleString()}</TableCell>
+                {mainKeys.map(key => <TableCell key={key}>{item[key] || 'N/A'}</TableCell>)}
+                <TableCell>{renderStatusBadge(item.status)}</TableCell>
+                <TableCell>
+                  {item.paymentMethod && <div><strong>Method:</strong> {item.paymentMethod}</div>}
+                  {item.receiptNumber && <div><strong>Receipt:</strong> {item.receiptNumber}</div>}
+                </TableCell>
+                <TableCell>
+                  {Object.entries(item)
+                    .filter(([key]) => !['id', 'submittedAt', 'status', ...mainKeys, 'paymentMethod', 'receiptNumber'].includes(key))
+                    .map(([key, value]) => (
+                      <div key={key} className="text-xs">
+                        <span className="font-semibold capitalize">{key.replace(/([A-Z])/g, ' $1').replace(/_/g, ' ').trim()}:</span> {String(value)}
+                      </div>
+                    ))}
+                </TableCell>
+                <TableCell className="text-right">
+                  {item.status === 'awaiting_confirmation' && (
+                    <Button 
+                      size="sm"
+                      onClick={() => handleConfirmPayment(item.id)}
+                      disabled={confirmingPaymentId === item.id}
+                    >
+                      {confirmingPaymentId === item.id ? <Loader2 className="animate-spin" /> : <CheckCircle />}
+                      Confirm
+                    </Button>
+                  )}
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      )
+  }
 
   if (!isAuthenticated) {
     return (
@@ -162,61 +266,6 @@ export default function AdminPage() {
         <Toaster />
       </>
     );
-  }
-
-  const renderTable = (data: Submission[], type: 'registration' | 'showcase') => {
-      const mainKeys = type === 'registration' 
-        ? ['full_name', 'email'] 
-        : ['projectName', 'presenterName', 'presenterEmail'];
-        
-      const selectedSet = type === 'registration' ? selectedRegistrations : selectedShowcases;
-
-      return (
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead className="w-[50px]">
-                <Checkbox 
-                  onCheckedChange={() => handleSelectAll(type)}
-                  checked={data.length > 0 && selectedSet.size === data.length}
-                />
-              </TableHead>
-              <TableHead>Submission Date</TableHead>
-              {mainKeys.map(key => <TableHead key={key} className="capitalize">{key.replace(/([A-Z])/g, ' $1').trim()}</TableHead>)}
-              <TableHead>Status</TableHead>
-              <TableHead>Other Details</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {data.map((item) => (
-              <TableRow key={item.id} data-state={selectedSet.has(item.id) ? 'selected' : ''}>
-                <TableCell>
-                  <Checkbox 
-                    onCheckedChange={() => handleSelect(item.id, type)}
-                    checked={selectedSet.has(item.id)}
-                  />
-                </TableCell>
-                <TableCell>{new Date(item.submittedAt).toLocaleString()}</TableCell>
-                {mainKeys.map(key => <TableCell key={key}>{item[key] || 'N/A'}</TableCell>)}
-                <TableCell>
-                    {item.status === 'paid' && <Badge variant="default" className="bg-green-600">Paid</Badge>}
-                    {item.status === 'payment_pending' && <Badge variant="secondary">Pending</Badge>}
-                    {!item.status && <Badge variant="outline">New</Badge>}
-                </TableCell>
-                <TableCell>
-                  {Object.entries(item)
-                    .filter(([key]) => !['id', 'submittedAt', 'status', ...mainKeys].includes(key))
-                    .map(([key, value]) => (
-                      <div key={key} className="text-xs">
-                        <span className="font-semibold capitalize">{key.replace(/([A-Z])/g, ' $1').replace(/_/g, ' ').trim()}:</span> {String(value)}
-                      </div>
-                    ))}
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      )
   }
 
   const selectedCount = selectedRegistrations.size + selectedShowcases.size;
