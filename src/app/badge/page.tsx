@@ -9,7 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Input } from '@/components/ui/input';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Loader2, AlertTriangle, Upload, Download, RotateCcw } from 'lucide-react';
+import { Loader2, AlertTriangle, Upload, Download, RotateCcw, LinkIcon, Phone, Handshake, Megaphone } from 'lucide-react';
 import { Logo } from '@/components/logo';
 
 type Submission = {
@@ -82,7 +82,7 @@ function BadgeGenerator() {
     // Draw user image placeholder or image
     ctx.save();
     const imageSize = 400;
-    const imageY = (height - imageSize) / 2 - 50;
+    const imageY = (height - imageSize) / 2 - 100;
     const imageX = (width - imageSize) / 2;
 
     ctx.beginPath();
@@ -129,26 +129,41 @@ function BadgeGenerator() {
         return text;
     }
 
-    const nameY = imageY + imageSize + 120;
+    const nameY = imageY + imageSize + 100;
     const fittedName = fitText(name, width - 160);
     ctx.fillText(fittedName, width / 2, nameY);
     
     if (organization) {
-      const orgY = nameY + 80;
+      const orgY = nameY + 70;
       ctx.font = '50px Inter, sans-serif';
       ctx.fillStyle = 'hsl(180, 20%, 85%)';
       ctx.fillText(organization, width / 2, orgY);
     }
     
     // Footer CTA
-    const footerY = height - 100;
+    const footerY = height - 200;
     ctx.font = 'bold 70px Inter, sans-serif';
     ctx.fillStyle = 'hsl(180, 47.1%, 64.3%)'; // accent
     ctx.fillText("I'll be there!", width / 2, footerY);
+
+    // Footer contact info
+    const contactStartY = height - 100;
+    ctx.fillStyle = 'hsl(180, 15%, 94%)';
+    ctx.font = '24px Inter, sans-serif';
+    ctx.textAlign = 'center';
+    const contactItems = [
+        "arewaskills.com.ng/event",
+        "Partner with Us",
+        "Showcase a Project",
+        "Call Us: 08063386516"
+    ];
+    const itemWidth = width / contactItems.length;
+    contactItems.forEach((item, index) => {
+        ctx.fillText(item, (itemWidth * index) + (itemWidth / 2), contactStartY);
+    });
   };
 
   useEffect(() => {
-    // Pre-load the logo image from an SVG data URL
     const logoSvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><linearGradient id="tealGradient" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" style="stop-color:hsl(180, 100%, 25.1%)" /><stop offset="100%" style="stop-color:hsl(180, 47.1%, 64.3%)" /></linearGradient></defs><circle cx="50" cy="50" r="48" fill="hsl(var(--card))" stroke="url(#tealGradient)" stroke-width="1.5" /><g stroke="url(#tealGradient)" stroke-width="4" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M50 20 V 35" /><path d="M50 80 V 65" /><path d="M20 50 H 35" /><path d="M80 50 H 65" /><circle cx="50" cy="50" r="15" /><path d="M35 35 A 21.21 21.21 0 0 1 65 65" /><path d="M65 35 A 21.21 21.21 0 0 1 35 65" /></g><circle cx="50" cy="50" r="3" fill="hsl(var(--primary))" /></svg>`;
     const img = new Image();
     img.onload = () => setLogoImage(img);
@@ -274,3 +289,5 @@ export default function BadgePage() {
         </main>
     )
 }
+
+    

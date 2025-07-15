@@ -4,28 +4,15 @@
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Logo } from '@/components/logo';
-import { ArrowRight, BrainCircuit, Code, Rocket, Handshake, Megaphone, Phone, Mail } from 'lucide-react';
+import { ArrowRight } from 'lucide-react';
 import Image from 'next/image';
+import { ParticleBackground } from '@/components/particle-background';
 
 export default function Home() {
   return (
     <main className="min-h-screen bg-[#0A0A0A] text-gray-200 font-body overflow-hidden">
+      <ParticleBackground />
       <div className="relative flex min-h-screen">
-        {/* Decorative background lines */}
-        <div className="absolute inset-0 z-0 opacity-20">
-            <svg width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">
-                <defs>
-                    <linearGradient id="lineGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-                        <stop offset="0%" style={{stopColor: 'hsl(var(--primary))', stopOpacity: 0.5}} />
-                        <stop offset="100%" style={{stopColor: 'hsl(var(--accent))', stopOpacity: 0.5}} />
-                    </linearGradient>
-                </defs>
-                <path d="M-200 100 Q 150 200, 300 100 T 800 150 T 1300 100 T 1800 200" stroke="url(#lineGradient)" strokeWidth="2" fill="none" />
-                <path d="M-200 400 Q 200 300, 400 400 T 900 350 T 1400 400 T 1900 300" stroke="url(#lineGradient)" strokeWidth="2" fill="none" />
-                 <path d="M-200 700 Q 180 600, 350 700 T 850 650 T 1350 700 T 1850 600" stroke="url(#lineGradient)" strokeWidth="2" fill="none" />
-            </svg>
-        </div>
-
         {/* Content Section */}
         <div className="w-full lg:w-3/5 flex flex-col justify-center p-8 md:p-16 relative z-10">
             <div className="max-w-xl">
@@ -64,7 +51,7 @@ export default function Home() {
             <Image 
                 src="https://placehold.co/800x1200.png" 
                 alt="Modern Arewa City" 
-                layout="fill" 
+                fill
                 objectFit="cover" 
                 className="opacity-40"
                 data-ai-hint="modern arewa city"
@@ -74,3 +61,5 @@ export default function Home() {
     </main>
   );
 }
+
+    
