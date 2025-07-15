@@ -1,3 +1,4 @@
+
 'use client';
 
 import { Suspense, useRef, useState, useEffect } from 'react';
@@ -9,10 +10,10 @@ import { Input } from '@/components/ui/input';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Loader2, AlertTriangle, Upload, Download, RotateCcw } from 'lucide-react';
-import { Logo } from '@/components/logo';
 
 type Submission = {
     id: string;
+    company_organization?: string;
     [key: string]: any;
 };
 
@@ -27,7 +28,7 @@ function BadgeGenerator() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [userImage, setUserImage] = useState<HTMLImageElement | null>(null);
 
-  const drawBadge = (name: string, image: HTMLImageElement | null) => {
+  const drawBadge = (submissionData: Submission, image: HTMLImageElement | null) => {
     const canvas = canvasRef.current;
     if (!canvas) return;
 
@@ -38,6 +39,10 @@ function BadgeGenerator() {
     const height = 1080;
     canvas.width = width;
     canvas.height = height;
+
+    const name = submissionData.type === 'registration' ? submissionData.full_name : submissionData.presenterName;
+    const organization = submissionData.type === 'registration' ? submissionData.company_organization : 'Project Showcase';
+
 
     // Background
     ctx.fillStyle = "hsl(180, 60%, 92.5%)"; // background
@@ -111,8 +116,7 @@ function BadgeGenerator() {
     ctx.textBaseline = 'middle';
     
     // a function to fit text in a box
-    const fitText = (text: string, maxWidth: number) => {
-        let fontSize = 80;
+    const fitText = (text: string, maxWidth: number, fontSize: number = 80) => {
         ctx.font = `bold ${fontSize}px Inter, sans-serif`;
         while (ctx.measureText(text).width > maxWidth) {
             fontSize--;
@@ -122,10 +126,17 @@ function BadgeGenerator() {
     }
     const fittedName = fitText(name, width - (cardPadding * 4));
     ctx.fillText(fittedName, width / 2, imageY + imageSize + 120);
+    
+    if (organization) {
+      ctx.font = '40px Inter, sans-serif';
+      ctx.fillStyle = '#555';
+      const fittedOrg = fitText(organization, width - (cardPadding * 4), 40);
+      ctx.fillText(fittedOrg, width / 2, imageY + imageSize + 180);
+    }
 
     ctx.font = '50px Inter, sans-serif';
     ctx.fillStyle = '#555';
-    ctx.fillText("I'll be there!", width / 2, imageY + imageSize + 220);
+    ctx.fillText("I'll be there!", width / 2, imageY + imageSize + 250);
   };
 
   useEffect(() => {
@@ -140,8 +151,7 @@ function BadgeGenerator() {
         const result = await findSubmissionById(id as string);
         if (result.success && result.data) {
           setSubmission(result.data);
-          const name = result.data.type === 'registration' ? result.data.full_name : result.data.presenterName;
-          drawBadge(name, userImage);
+          drawBadge(result.data, userImage);
         } else {
           setError(result.error || 'Could not find submission.');
         }
@@ -153,13 +163,14 @@ function BadgeGenerator() {
     }
 
     fetchSubmission();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
 
   useEffect(() => {
     if (submission) {
-        const name = submission.type === 'registration' ? submission.full_name : submission.presenterName;
-        drawBadge(name, userImage);
+        drawBadge(submission, userImage);
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [userImage, submission]);
 
 
