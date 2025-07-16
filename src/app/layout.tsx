@@ -2,8 +2,8 @@ import type { Metadata } from 'next';
 import './globals.css';
 
 export const metadata: Metadata = {
-  title: 'Skills Arewa - Empowering Tech in Northern Nigeria',
-  description: 'An initiative to enlighten people of Arewa on AI, tech, and development.',
+  title: 'Arewa Tech Connect - Dev & AI Hangout',
+  description: 'An exclusive gathering of tech enthusiasts and professionals in Northern Nigeria. Join us to connect, learn, and showcase your work.',
 };
 
 export default function RootLayout({
