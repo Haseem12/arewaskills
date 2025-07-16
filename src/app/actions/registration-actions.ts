@@ -1,8 +1,8 @@
 
 'use server';
 
-// The base URL for your custom PHP API
-const API_BASE_URL = 'https://sajfoods.net/api/event/event.php';
+// The base URL for your custom PHP API folder
+const API_BASE_URL = 'https://sajfoods.net/api/event';
 
 // Helper function to handle API responses
 async function handleApiResponse(response: Response) {
@@ -11,7 +11,7 @@ async function handleApiResponse(response: Response) {
         try {
             errorBody = await response.json();
         } catch (e) {
-            errorBody = { message: 'An unknown error occurred.' };
+            errorBody = { message: 'An unknown error occurred, and the response was not valid JSON.' };
         }
         console.error('API Error:', response.status, errorBody);
         const errorMessage = errorBody?.error || `Request failed with status ${response.status}`;
@@ -33,7 +33,7 @@ async function handleApiResponse(response: Response) {
 
 export async function saveRegistration(formData: Record<string, any>) {
   try {
-    const response = await fetch(`${API_BASE_URL}/registrations`, {
+    const response = await fetch(`${API_BASE_URL}/event.php/registrations`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(formData),
@@ -47,7 +47,7 @@ export async function saveRegistration(formData: Record<string, any>) {
 
 export async function getRegistrations() {
   try {
-    const response = await fetch(`${API_BASE_URL}/registrations`, { cache: 'no-store' });
+    const response = await fetch(`${API_BASE_URL}/event.php/registrations`, { cache: 'no-store' });
     const result = await handleApiResponse(response);
     return { ...result, data: result.data || [] };
   } catch (error: any) {
@@ -58,7 +58,7 @@ export async function getRegistrations() {
 
 export async function saveShowcase(formData: Record<string, any>) {
     try {
-        const response = await fetch(`${API_BASE_URL}/showcases`, {
+        const response = await fetch(`${API_BASE_URL}/event.php/showcases`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(formData),
@@ -72,7 +72,7 @@ export async function saveShowcase(formData: Record<string, any>) {
 
 export async function getShowcases() {
     try {
-        const response = await fetch(`${API_BASE_URL}/showcases`, { cache: 'no-store' });
+        const response = await fetch(`${API_BASE_URL}/event.php/showcases`, { cache: 'no-store' });
         const result = await handleApiResponse(response);
         return { ...result, data: result.data || [] };
     } catch (error: any) {
@@ -83,7 +83,7 @@ export async function getShowcases() {
 
 export async function updateSubmissionStatus(id: string, status: 'payment_pending' | 'awaiting_confirmation' | 'paid', details?: Record<string, any>) {
     try {
-        const response = await fetch(`${API_BASE_URL}/submissions/${id}`, {
+        const response = await fetch(`${API_BASE_URL}/event.php/submissions/${id}`, {
             method: 'PATCH',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ status, ...details }),
@@ -97,7 +97,7 @@ export async function updateSubmissionStatus(id: string, status: 'payment_pendin
 
 export async function markSubmissionsAsPending(ids: string[]) {
     try {
-        const response = await fetch(`${API_BASE_URL}/submissions/mark-pending`, {
+        const response = await fetch(`${API_BASE_URL}/event.php/submissions/mark-pending`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ ids }),
@@ -111,7 +111,7 @@ export async function markSubmissionsAsPending(ids: string[]) {
 
 export async function findSubmissionByEmail(email: string) {
     try {
-        const response = await fetch(`${API_BASE_URL}/submissions/find?email=${encodeURIComponent(email.toLowerCase())}`, { cache: 'no-store' });
+        const response = await fetch(`${API_BASE_URL}/event.php/submissions/find?email=${encodeURIComponent(email.toLowerCase())}`, { cache: 'no-store' });
         return await handleApiResponse(response);
     } catch(error: any) {
         console.error('Error finding submission by email:', error);
@@ -121,7 +121,7 @@ export async function findSubmissionByEmail(email: string) {
 
 export async function findSubmissionById(id: string) {
     try {
-        const response = await fetch(`${API_BASE_URL}/submissions/${id}`, { cache: 'no-store' });
+        const response = await fetch(`${API_BASE_URL}/event.php/submissions/${id}`, { cache: 'no-store' });
         return await handleApiResponse(response);
     } catch (error: any) {
         console.error('Error finding submission by ID:', error);
