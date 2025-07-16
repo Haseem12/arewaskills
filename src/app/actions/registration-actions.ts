@@ -1,7 +1,8 @@
+
 'use server';
 
 // The base URL for your custom PHP API
-const API_BASE_URL = 'https://skillsarewa.com.ng/events/api';
+const API_BASE_URL = 'https://arewaskills.com.ng/event/api/event.php';
 
 // Helper function to handle API responses
 async function handleApiResponse(response: Response) {
@@ -13,11 +14,15 @@ async function handleApiResponse(response: Response) {
             errorBody = { message: 'An unknown error occurred.' };
         }
         console.error('API Error:', response.status, errorBody);
-        const errorMessage = errorBody?.message || `Request failed with status ${response.status}`;
+        const errorMessage = errorBody?.error || `Request failed with status ${response.status}`;
         return { success: false, error: errorMessage, data: null };
     }
     try {
         const data = await response.json();
+        if (data.success === false) {
+             console.error('API Logic Error:', data.error);
+             return { success: false, error: data.error, data: null };
+        }
         return { success: true, data: data.data, error: null }; // Assuming your API wraps data in a 'data' property
     } catch (error) {
          console.error('API JSON Parse Error:', error);
