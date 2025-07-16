@@ -2,7 +2,7 @@
 'use server';
 
 // The base URL for your custom PHP API
-const API_BASE_URL = 'https://arewaskills.com.ng/event/api/event.php';
+const API_BASE_URL = 'https://sajfoods.net/event/api/event.php';
 
 // Helper function to handle API responses
 async function handleApiResponse(response: Response) {
