@@ -40,7 +40,7 @@ export function RegistrationForm({ onRegistrationSuccess }: RegistrationFormProp
       phone_number: '',
       company_organization: '',
       job_title: '',
-      years_of_experience: undefined,
+      years_of_experience: '' as any, // Initialize as empty string to avoid uncontrolled input error
       what_do_you_hope_to_learn_: '',
     },
   });
