@@ -1,6 +1,5 @@
 'use client';
 
-import type { FormConfig, FormField as FormFieldType } from '@/ai/flows/dynamic-form-generation';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
@@ -9,105 +8,44 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
-import { useMemo, useTransition } from 'react';
+import { useTransition } from 'react';
 import { Loader2 } from 'lucide-react';
 import { saveRegistration } from '@/app/actions/registration-actions';
 
 interface RegistrationFormProps {
-  formConfig: FormConfig;
   onRegistrationSuccess?: () => void;
 }
 
-// Helper to create a Zod schema from the form configuration
-function createZodSchema(fields: FormFieldType[]): z.ZodObject<any> {
-  const schemaShape: { [key: string]: z.ZodType<any, any> } = {};
+const registrationSchema = z.object({
+  full_name: z.string().min(1, { message: 'Full name is required.' }),
+  email: z.string().email({ message: 'Invalid email address.' }),
+  phone_number: z.string().optional(),
+  company_organization: z.string().min(1, { message: 'Company or organization is required.' }),
+  job_title: z.string().min(1, { message: 'Job title is required.' }),
+  years_of_experience: z.coerce.number().min(0, { message: 'Years of experience must be a positive number.' }),
+  what_do_you_hope_to_learn_: z.string().min(1, { message: 'This field is required.' }),
+});
 
-  fields.forEach(field => {
-    let zodType: z.ZodTypeAny;
+type RegistrationFormValues = z.infer<typeof registrationSchema>;
 
-    switch (field.type) {
-      case 'email':
-        zodType = z.string().email({ message: "Invalid email address." });
-        break;
-      case 'tel':
-        zodType = z.string().min(10, { message: "Phone number seems too short." });
-        break;
-      case 'number':
-        zodType = z.coerce.number().min(0, { message: "Value must be positive." });
-        break;
-      default:
-        zodType = z.string();
-    }
-    
-    if (field.required) {
-        if(zodType instanceof z.ZodString) {
-            zodType = zodType.min(1, { message: `${field.label} is required.` });
-        }
-    } else {
-        zodType = zodType.optional().or(z.literal(''));
-    }
-    
-    if (field.validationRegex && zodType instanceof z.ZodString) {
-        try {
-            const regex = new RegExp(field.validationRegex);
-            zodType = zodType.regex(regex, { message: `Invalid format for ${field.label}.` });
-        } catch (e) {
-            console.warn(`Invalid regex for ${field.label}: ${field.validationRegex}`);
-        }
-    }
-
-    const fieldKey = field.label.toLowerCase().replace(/[^a-z0-9]/g, '_');
-    schemaShape[fieldKey] = zodType;
-  });
-
-  return z.object(schemaShape);
-}
-
-function renderField(field: FormFieldType, form: ReturnType<typeof useForm>) {
-    const fieldKey = field.label.toLowerCase().replace(/[^a-z0-9]/g, '_');
-    const ControlComponent = field.type === 'textarea' ? Textarea : Input;
-
-    return (
-        <FormField
-            key={fieldKey}
-            control={form.control}
-            name={fieldKey}
-            render={({ field: formField }) => (
-                <FormItem>
-                    <FormLabel>{field.label}{field.required && <span className="text-destructive">*</span>}</FormLabel>
-                    <FormControl>
-                        <ControlComponent 
-                            type={field.type === 'textarea' ? undefined : field.type} 
-                            placeholder={field.placeholder || ''} 
-                            {...formField} 
-                            className="transition-all duration-300 focus:shadow-lg focus:shadow-accent/20"
-                        />
-                    </FormControl>
-                    <FormMessage />
-                </FormItem>
-            )}
-        />
-    )
-}
-
-export function RegistrationForm({ formConfig, onRegistrationSuccess }: RegistrationFormProps) {
+export function RegistrationForm({ onRegistrationSuccess }: RegistrationFormProps) {
   const [isPending, startTransition] = useTransition();
   const { toast } = useToast();
 
-  const formSchema = useMemo(() => createZodSchema(formConfig.fields), [formConfig.fields]);
-  
-  const form = useForm<z.infer<typeof formSchema>>({
-    resolver: zodResolver(formSchema),
-    defaultValues: formConfig.fields.reduce((acc, field) => {
-        const fieldKey = field.label.toLowerCase().replace(/[^a-z0-9]/g, '_');
-        const defaultValue = field.type === 'number' ? undefined : '';
-        // @ts-ignore
-        acc[fieldKey] = defaultValue;
-        return acc;
-    }, {})
+  const form = useForm<RegistrationFormValues>({
+    resolver: zodResolver(registrationSchema),
+    defaultValues: {
+      full_name: '',
+      email: '',
+      phone_number: '',
+      company_organization: '',
+      job_title: '',
+      years_of_experience: undefined,
+      what_do_you_hope_to_learn_: '',
+    },
   });
 
-  function onSubmit(values: z.infer<typeof formSchema>) {
+  function onSubmit(values: RegistrationFormValues) {
     startTransition(async () => {
       const result = await saveRegistration(values);
 
@@ -137,8 +75,98 @@ export function RegistrationForm({ formConfig, onRegistrationSuccess }: Registra
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-        {formConfig.fields.map(field => renderField(field, form))}
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+        <FormField
+          control={form.control}
+          name="full_name"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Full Name<span className="text-destructive">*</span></FormLabel>
+              <FormControl>
+                <Input placeholder="e.g., Jane Doe" {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+         <FormField
+          control={form.control}
+          name="email"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Email<span className="text-destructive">*</span></FormLabel>
+              <FormControl>
+                <Input type="email" placeholder="you@example.com" {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <FormField
+          control={form.control}
+          name="phone_number"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Phone Number (Optional)</FormLabel>
+              <FormControl>
+                <Input type="tel" placeholder="Your phone number" {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+         <FormField
+          control={form.control}
+          name="company_organization"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Company/Organization<span className="text-destructive">*</span></FormLabel>
+              <FormControl>
+                <Input placeholder="Your company name" {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <FormField
+          control={form.control}
+          name="job_title"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Job Title<span className="text-destructive">*</span></FormLabel>
+              <FormControl>
+                <Input placeholder="e.g., Software Engineer" {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <FormField
+          control={form.control}
+          name="years_of_experience"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Years of Experience<span className="text-destructive">*</span></FormLabel>
+              <FormControl>
+                <Input type="number" placeholder="e.g., 5" {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <FormField
+          control={form.control}
+          name="what_do_you_hope_to_learn_"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>What do you hope to learn?<span className="text-destructive">*</span></FormLabel>
+              <FormControl>
+                <Textarea placeholder="I'm excited to learn about..." {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
         
         <Button 
           type="submit" 
