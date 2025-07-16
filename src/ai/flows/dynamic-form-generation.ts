@@ -1,3 +1,4 @@
+
 'use server';
 
 /**
@@ -16,6 +17,7 @@ const FormFieldSchema = z.object({
   required: z.boolean().describe('Whether the field is required.'),
   validationRegex: z.string().optional().describe('Optional regex for validating the field.'),
   placeholder: z.string().optional().describe('Optional placeholder text for the input field.'),
+  name: z.string().describe('A machine-readable name for the field, e.g., "full_name".')
 });
 
 export type FormField = z.infer<typeof FormFieldSchema>;
@@ -40,7 +42,7 @@ const dynamicFormGenerationPrompt = ai.definePrompt({
   name: 'dynamicFormGenerationPrompt',
   input: {schema: FormGenerationInputSchema},
   output: {schema: FormConfigSchema},
-  prompt: `You are an AI form generator. You will generate a JSON configuration for a form based on the description provided. The form configuration should include an array of fields, each with a label, type, and whether it is required. Generate appropriate HTML5 input types (like text, email, tel, number, textarea). Generate a validationRegex if appropriate, and placeholder to guide the user.
+  prompt: `You are an AI form generator. You will generate a JSON configuration for a form based on the description provided. The form configuration should include an array of fields, each with a label, name (a snake_case key), type, and whether it is required. Generate appropriate HTML5 input types (like text, email, tel, number, textarea). Generate a validationRegex if appropriate, and placeholder to guide the user.
 
 Form Description: {{{formDescription}}}
 
@@ -48,6 +50,7 @@ Output the form configuration as a JSON object. Do not include any explanation, 
 
 type FormField = {
   label: string;
+  name: string; // e.g., 'full_name'
   type: 'text' | 'email' | 'tel' | 'number' | 'textarea';
   required: boolean;
   validationRegex?: string;
