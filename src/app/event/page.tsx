@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Logo } from '@/components/logo';
 import Image from 'next/image';
@@ -15,33 +15,12 @@ import {
 } from '@/components/ui/dialog';
 import { RegistrationForm } from '@/components/registration-form';
 import { ShowcaseForm } from '@/components/showcase-form';
-import type { FormConfig } from '@/ai/flows/dynamic-form-generation';
-import { generateFormFields } from '@/ai/flows/dynamic-form-generation';
-import { Skeleton } from '@/components/ui/skeleton';
 import { Toaster } from '@/components/ui/toaster';
 import Link from 'next/link';
 
 export default function EventPage() {
-  const [formConfig, setFormConfig] = useState<FormConfig | null>(null);
-  const [loading, setLoading] = useState(true);
   const [isRegisterDialogOpen, setIsRegisterDialogOpen] = useState(false);
   const [isShowcaseDialogOpen, setIsShowcaseDialogOpen] = useState(false);
-
-  useEffect(() => {
-    async function loadForm() {
-      try {
-        const config = await generateFormFields({
-          formDescription: 'A registration form for a tech conference for developers and AI enthusiasts in Northern Nigeria. It should ask for full name, email, phone number, company/organization, job title, years of experience as a number input, and a text area for what they hope to learn. Make the phone number optional.',
-        });
-        setFormConfig(config);
-      } catch (error) {
-        console.error('Failed to generate form fields:', error);
-      } finally {
-        setLoading(false);
-      }
-    }
-    loadForm();
-  }, []);
   
   const handleRegistrationSuccess = () => {
     setIsRegisterDialogOpen(false);
@@ -73,7 +52,7 @@ export default function EventPage() {
             <p className="mt-8 max-w-2xl text-center text-lg text-muted-foreground">
               An exclusive gathering of tech enthusiasts and professionals in Northern Nigeria. Join us to connect, learn, and showcase your work.
             </p>
-            <div className="mt-10 flex flex-col sm:flex-row gap-4">
+            <div className="mt-10 flex flex-wrap justify-center gap-4">
               <Dialog open={isRegisterDialogOpen} onOpenChange={setIsRegisterDialogOpen}>
                 <DialogTrigger asChild>
                   <Button size="lg" className="text-lg py-7 px-8 transform hover:scale-105 transition-transform duration-300">
@@ -88,18 +67,7 @@ export default function EventPage() {
                     </DialogDescription>
                   </DialogHeader>
                   <div className="py-4">
-                    {loading ? (
-                       <div className="space-y-4">
-                        <Skeleton className="h-10 w-full" />
-                        <Skeleton className="h-10 w-full" />
-                        <Skeleton className="h-24 w-full" />
-                        <Skeleton className="h-12 w-full" />
-                       </div>
-                    ) : formConfig ? (
-                      <RegistrationForm formConfig={formConfig} onRegistrationSuccess={handleRegistrationSuccess} />
-                    ) : (
-                      <p className="text-destructive">Failed to load registration form. Please try again later.</p>
-                    )}
+                    <RegistrationForm onRegistrationSuccess={handleRegistrationSuccess} />
                   </div>
                 </DialogContent>
               </Dialog>
@@ -124,6 +92,9 @@ export default function EventPage() {
                   </div>
                 </DialogContent>
               </Dialog>
+              <Button asChild size="lg" variant="secondary" className="text-lg py-7 px-8">
+                <Link href="/promote">Create Promo Banner</Link>
+              </Button>
             </div>
              <div className="mt-8">
                  <Button asChild variant="link">
