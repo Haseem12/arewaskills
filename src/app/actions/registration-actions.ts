@@ -1,94 +1,155 @@
 
 'use server';
 
-// The base URL for your custom PHP API folder
-const API_BASE_URL = 'https://sajfoods.net/api/event';
+import fs from 'fs/promises';
+import path from 'path';
 
-// Helper function to handle API responses
-async function handleApiResponse(response: Response) {
-    if (!response.ok) {
-        let errorBody;
-        try {
-            errorBody = await response.json();
-        } catch (e) {
-            errorBody = { message: 'An unknown error occurred, and the response was not valid JSON.' };
-        }
-        console.error('API Error:', response.status, errorBody);
-        const errorMessage = errorBody?.error || `Request failed with status ${response.status}`;
-        return { success: false, error: errorMessage, data: null };
-    }
+type Submission = Record<string, any>;
+
+const registrationsPath = path.resolve(process.cwd(), 'data/registrations.json');
+const showcasesPath = path.resolve(process.cwd(), 'data/showcases.json');
+
+async function readData(filePath: string): Promise<Submission[]> {
     try {
-        const data = await response.json();
-        if (data.success === false) {
-             console.error('API Logic Error:', data.error);
-             return { success: false, error: data.error, data: null };
-        }
-        return { success: true, data: data.data, error: null }; // Assuming your API wraps data in a 'data' property
+        const fileData = await fs.readFile(filePath, 'utf-8');
+        return JSON.parse(fileData);
     } catch (error) {
-         console.error('API JSON Parse Error:', error);
-        return { success: false, error: 'Failed to parse server response.', data: null };
+        // If the file doesn't exist, return an empty array
+        if ((error as NodeJS.ErrnoException).code === 'ENOENT') {
+            return [];
+        }
+        console.error(`Error reading data from ${filePath}:`, error);
+        throw new Error(`Could not read data from ${filePath}.`);
     }
 }
 
+async function writeData(filePath: string, data: Submission[]) {
+    try {
+        await fs.writeFile(filePath, JSON.stringify(data, null, 2), 'utf-8');
+    } catch (error) {
+        console.error(`Error writing data to ${filePath}:`, error);
+        throw new Error(`Could not write data to ${filePath}.`);
+    }
+}
 
 export async function saveRegistration(formData: Record<string, any>) {
   try {
-    const response = await fetch(`${API_BASE_URL}/event.php/registrations`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData),
-    });
-    return handleApiResponse(response);
+    const registrations = await readData(registrationsPath);
+    const newRegistration = {
+      ...formData,
+      id: Date.now().toString(),
+      submittedAt: new Date().toISOString(),
+      type: 'registration',
+    };
+    registrations.push(newRegistration);
+    await writeData(registrationsPath, registrations);
+    return { success: true, data: newRegistration, error: null };
   } catch (error: any) {
     console.error('Error saving registration:', error);
-    return { success: false, error: 'Could not connect to the server.', data: null };
+    return { success: false, error: 'Could not save registration.', data: null };
   }
 }
 
 export async function getRegistrations() {
   try {
-    const response = await fetch(`${API_BASE_URL}/event.php/registrations`, { cache: 'no-store' });
-    const result = await handleApiResponse(response);
-    return { ...result, data: result.data || [] };
+    const data = await readData(registrationsPath);
+    // sort by date descending
+    data.sort((a, b) => new Date(b.submittedAt).getTime() - new Date(a.submittedAt).getTime());
+    return { success: true, data, error: null };
   } catch (error: any) {
     console.error('Error getting registrations:', error);
-    return { success: false, error: 'Could not connect to the server.', data: [] };
+    return { success: false, error: 'Could not retrieve registrations.', data: [] };
   }
 }
 
 export async function saveShowcase(formData: Record<string, any>) {
     try {
-        const response = await fetch(`${API_BASE_URL}/event.php/showcases`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(formData),
-        });
-        return handleApiResponse(response);
+        const showcases = await readData(showcasesPath);
+        const newShowcase = {
+            ...formData,
+            id: Date.now().toString(),
+            submittedAt: new Date().toISOString(),
+            type: 'showcase',
+        };
+        showcases.push(newShowcase);
+        await writeData(showcasesPath, showcases);
+        return { success: true, data: newShowcase, error: null };
     } catch (error: any) {
         console.error('Error saving showcase:', error);
-        return { success: false, error: 'Could not connect to the server.' };
+        return { success: false, error: 'Could not save showcase.', data: null };
     }
 }
 
 export async function getShowcases() {
     try {
-        const response = await fetch(`${API_BASE_URL}/event.php/showcases`, { cache: 'no-store' });
-        const result = await handleApiResponse(response);
-        return { ...result, data: result.data || [] };
+        const data = await readData(showcasesPath);
+        data.sort((a, b) => new Date(b.submittedAt).getTime() - new Date(a.submittedAt).getTime());
+        return { success: true, data, error: null };
     } catch (error: any) {
         console.error('Error getting showcases:', error);
-        return { success: false, error: 'Could not connect to the server.', data: [] };
+        return { success: false, error: 'Could not retrieve showcases.', data: [] };
     }
 }
 
-export async function updateSubmissionStatus(id: string, status: 'payment_pending' | 'awaiting_confirmation' | 'paid', details?: Record<string, any>) {
+export async function findSubmissionById(id: string) {
     try {
-        const response = await fetch(`${API_BASE_URL}/event.php/submissions/${id}`, {
-            method: 'PATCH',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ status, ...details }),
-        });
-        return handleApiResponse(response);
+        const registrations = await readData(registrationsPath);
+        const registration = registrations.find(r => r.id === id);
+        if (registration) return { success: true, data: registration, error: null };
+
+        const showcases = await readData(showcasesPath);
+        const showcase = showcases.find(s => s.id === id);
+        if (showcase) return { success: true, data: showcase, error: null };
+
+        return { success: false, error: 'Submission not found.', data: null };
+    } catch (error: any) {
+        console.error('Error finding submission by ID:', error);
+        return { success: false, error: 'Database query failed.', data: null };
+    }
+}
+
+
+export async function findSubmissionByEmail(email: string) {
+    try {
+        const lowercasedEmail = email.toLowerCase();
+        
+        const registrations = await readData(registrationsPath);
+        const registration = registrations.find(r => r.email?.toLowerCase() === lowercasedEmail);
+        if (registration) return { success: true, data: registration, error: null };
+
+        const showcases = await readData(showcasesPath);
+        const showcase = showcases.find(s => s.presenterEmail?.toLowerCase() === lowercasedEmail);
+        if (showcase) return { success: true, data: showcase, error: null };
+
+        return { success: false, error: 'Submission with that email not found.', data: null };
+    } catch(error: any) {
+        console.error('Error finding submission by email:', error);
+        return { success: false, error: 'Database query failed.', data: null };
+    }
+}
+
+
+export async function updateSubmissionStatus(id: string, status: 'payment_pending' | 'awaiting_confirmation' | 'paid', details?: Record<string, any>) {
+     try {
+        const registrations = await readData(registrationsPath);
+        const regIndex = registrations.findIndex(r => r.id === id);
+
+        if (regIndex !== -1) {
+            registrations[regIndex] = { ...registrations[regIndex], status, ...details };
+            await writeData(registrationsPath, registrations);
+            return { success: true, data: registrations[regIndex], error: null };
+        }
+
+        const showcases = await readData(showcasesPath);
+        const showcaseIndex = showcases.findIndex(s => s.id === id);
+
+        if (showcaseIndex !== -1) {
+            showcases[showcaseIndex] = { ...showcases[showcaseIndex], status, ...details };
+            await writeData(showcasesPath, showcases);
+            return { success: true, data: showcases[showcaseIndex], error: null };
+        }
+
+        return { success: false, error: 'Submission to update not found.', data: null };
     } catch (error: any) {
         console.error('Error updating submission status:', error);
         return { success: false, error: 'Could not update submission status.' };
@@ -97,34 +158,29 @@ export async function updateSubmissionStatus(id: string, status: 'payment_pendin
 
 export async function markSubmissionsAsPending(ids: string[]) {
     try {
-        const response = await fetch(`${API_BASE_URL}/event.php/submissions/mark-pending`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ ids }),
+        let updated = false;
+        const registrations = await readData(registrationsPath);
+        registrations.forEach(r => {
+            if (ids.includes(r.id)) {
+                r.status = 'payment_pending';
+                updated = true;
+            }
         });
-        return handleApiResponse(response);
+        if(updated) await writeData(registrationsPath, registrations);
+
+        updated = false;
+        const showcases = await readData(showcasesPath);
+        showcases.forEach(s => {
+            if (ids.includes(s.id)) {
+                s.status = 'payment_pending';
+                updated = true;
+            }
+        });
+        if(updated) await writeData(showcasesPath, showcases);
+
+        return { success: true, data: { updatedIds: ids }, error: null };
     } catch (error: any) {
         console.error('Error marking submissions as pending:', error);
         return { success: false, error: 'Could not update submissions.' };
-    }
-}
-
-export async function findSubmissionByEmail(email: string) {
-    try {
-        const response = await fetch(`${API_BASE_URL}/event.php/submissions/find?email=${encodeURIComponent(email.toLowerCase())}`, { cache: 'no-store' });
-        return await handleApiResponse(response);
-    } catch(error: any) {
-        console.error('Error finding submission by email:', error);
-        return { success: false, error: 'Database query failed.', data: null };
-    }
-}
-
-export async function findSubmissionById(id: string) {
-    try {
-        const response = await fetch(`${API_BASE_URL}/event.php/submissions/${id}`, { cache: 'no-store' });
-        return await handleApiResponse(response);
-    } catch (error: any) {
-        console.error('Error finding submission by ID:', error);
-        return { success: false, error: 'Database query failed.', data: null };
     }
 }
