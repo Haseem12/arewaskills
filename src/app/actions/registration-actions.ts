@@ -1,49 +1,32 @@
 
 'use server';
 
-import fs from 'fs/promises';
-import path from 'path';
+import { db } from '@/lib/firebase';
+import { FieldValue } from 'firebase-admin/firestore';
 
-type Submission = Record<string, any>;
-
-const registrationsPath = path.resolve(process.cwd(), 'data/registrations.json');
-const showcasesPath = path.resolve(process.cwd(), 'data/showcases.json');
-
-async function readData(filePath: string): Promise<Submission[]> {
-    try {
-        const fileData = await fs.readFile(filePath, 'utf-8');
-        return JSON.parse(fileData);
-    } catch (error) {
-        // If the file doesn't exist, return an empty array
-        if ((error as NodeJS.ErrnoException).code === 'ENOENT') {
-            return [];
-        }
-        console.error(`Error reading data from ${filePath}:`, error);
-        throw new Error(`Could not read data from ${filePath}.`);
+// Helper function to convert Firestore Timestamps to ISO strings
+function serializeData(docData: any) {
+  if (!docData) return null;
+  const data = { ...docData };
+  for (const key in data) {
+    if (data[key] instanceof FieldValue || (data[key] && typeof data[key].toDate === 'function')) {
+      data[key] = data[key].toDate().toISOString();
     }
-}
-
-async function writeData(filePath: string, data: Submission[]) {
-    try {
-        await fs.writeFile(filePath, JSON.stringify(data, null, 2), 'utf-8');
-    } catch (error) {
-        console.error(`Error writing data to ${filePath}:`, error);
-        throw new Error(`Could not write data to ${filePath}.`);
-    }
+  }
+  return data;
 }
 
 export async function saveRegistration(formData: Record<string, any>) {
   try {
-    const registrations = await readData(registrationsPath);
+    const docRef = db.collection('registrations').doc();
     const newRegistration = {
       ...formData,
-      id: Date.now().toString(),
-      submittedAt: new Date().toISOString(),
+      id: docRef.id,
+      submittedAt: FieldValue.serverTimestamp(),
       type: 'registration',
     };
-    registrations.push(newRegistration);
-    await writeData(registrationsPath, registrations);
-    return { success: true, data: newRegistration, error: null };
+    await docRef.set(newRegistration);
+    return { success: true, data: { ...newRegistration, submittedAt: new Date().toISOString() }, error: null };
   } catch (error: any) {
     console.error('Error saving registration:', error);
     return { success: false, error: 'Could not save registration.', data: null };
@@ -52,9 +35,8 @@ export async function saveRegistration(formData: Record<string, any>) {
 
 export async function getRegistrations() {
   try {
-    const data = await readData(registrationsPath);
-    // sort by date descending
-    data.sort((a, b) => new Date(b.submittedAt).getTime() - new Date(a.submittedAt).getTime());
+    const snapshot = await db.collection('registrations').orderBy('submittedAt', 'desc').get();
+    const data = snapshot.docs.map(doc => serializeData({ id: doc.id, ...doc.data() }));
     return { success: true, data, error: null };
   } catch (error: any) {
     console.error('Error getting registrations:', error);
@@ -64,16 +46,15 @@ export async function getRegistrations() {
 
 export async function saveShowcase(formData: Record<string, any>) {
     try {
-        const showcases = await readData(showcasesPath);
+        const docRef = db.collection('showcases').doc();
         const newShowcase = {
             ...formData,
-            id: Date.now().toString(),
-            submittedAt: new Date().toISOString(),
+            id: docRef.id,
+            submittedAt: FieldValue.serverTimestamp(),
             type: 'showcase',
         };
-        showcases.push(newShowcase);
-        await writeData(showcasesPath, showcases);
-        return { success: true, data: newShowcase, error: null };
+        await docRef.set(newShowcase);
+        return { success: true, data: { ...newShowcase, submittedAt: new Date().toISOString() }, error: null };
     } catch (error: any) {
         console.error('Error saving showcase:', error);
         return { success: false, error: 'Could not save showcase.', data: null };
@@ -82,8 +63,8 @@ export async function saveShowcase(formData: Record<string, any>) {
 
 export async function getShowcases() {
     try {
-        const data = await readData(showcasesPath);
-        data.sort((a, b) => new Date(b.submittedAt).getTime() - new Date(a.submittedAt).getTime());
+        const snapshot = await db.collection('showcases').orderBy('submittedAt', 'desc').get();
+        const data = snapshot.docs.map(doc => serializeData({ id: doc.id, ...doc.data() }));
         return { success: true, data, error: null };
     } catch (error: any) {
         console.error('Error getting showcases:', error);
@@ -93,13 +74,15 @@ export async function getShowcases() {
 
 export async function findSubmissionById(id: string) {
     try {
-        const registrations = await readData(registrationsPath);
-        const registration = registrations.find(r => r.id === id);
-        if (registration) return { success: true, data: registration, error: null };
+        let doc = await db.collection('registrations').doc(id).get();
+        if (doc.exists) {
+            return { success: true, data: serializeData({ id: doc.id, ...doc.data() }), error: null };
+        }
 
-        const showcases = await readData(showcasesPath);
-        const showcase = showcases.find(s => s.id === id);
-        if (showcase) return { success: true, data: showcase, error: null };
+        doc = await db.collection('showcases').doc(id).get();
+        if (doc.exists) {
+            return { success: true, data: serializeData({ id: doc.id, ...doc.data() }), error: null };
+        }
 
         return { success: false, error: 'Submission not found.', data: null };
     } catch (error: any) {
@@ -108,18 +91,21 @@ export async function findSubmissionById(id: string) {
     }
 }
 
-
 export async function findSubmissionByEmail(email: string) {
     try {
         const lowercasedEmail = email.toLowerCase();
         
-        const registrations = await readData(registrationsPath);
-        const registration = registrations.find(r => r.email?.toLowerCase() === lowercasedEmail);
-        if (registration) return { success: true, data: registration, error: null };
+        let snapshot = await db.collection('registrations').where('email', '==', lowercasedEmail).limit(1).get();
+        if (!snapshot.empty) {
+            const doc = snapshot.docs[0];
+            return { success: true, data: serializeData({ id: doc.id, ...doc.data() }), error: null };
+        }
 
-        const showcases = await readData(showcasesPath);
-        const showcase = showcases.find(s => s.presenterEmail?.toLowerCase() === lowercasedEmail);
-        if (showcase) return { success: true, data: showcase, error: null };
+        snapshot = await db.collection('showcases').where('presenterEmail', '==', lowercasedEmail).limit(1).get();
+        if (!snapshot.empty) {
+            const doc = snapshot.docs[0];
+            return { success: true, data: serializeData({ id: doc.id, ...doc.data() }), error: null };
+        }
 
         return { success: false, error: 'Submission with that email not found.', data: null };
     } catch(error: any) {
@@ -128,25 +114,24 @@ export async function findSubmissionByEmail(email: string) {
     }
 }
 
-
 export async function updateSubmissionStatus(id: string, status: 'payment_pending' | 'awaiting_confirmation' | 'paid', details?: Record<string, any>) {
      try {
-        const registrations = await readData(registrationsPath);
-        const regIndex = registrations.findIndex(r => r.id === id);
+        const dataToUpdate = { ...details, status };
+        let docRef = db.collection('registrations').doc(id);
+        let doc = await docRef.get();
 
-        if (regIndex !== -1) {
-            registrations[regIndex] = { ...registrations[regIndex], status, ...details };
-            await writeData(registrationsPath, registrations);
-            return { success: true, data: registrations[regIndex], error: null };
+        if (doc.exists) {
+            await docRef.update(dataToUpdate);
+            const updatedDoc = await docRef.get();
+            return { success: true, data: serializeData({ id: updatedDoc.id, ...updatedDoc.data() }), error: null };
         }
 
-        const showcases = await readData(showcasesPath);
-        const showcaseIndex = showcases.findIndex(s => s.id === id);
-
-        if (showcaseIndex !== -1) {
-            showcases[showcaseIndex] = { ...showcases[showcaseIndex], status, ...details };
-            await writeData(showcasesPath, showcases);
-            return { success: true, data: showcases[showcaseIndex], error: null };
+        docRef = db.collection('showcases').doc(id);
+        doc = await docRef.get();
+        if (doc.exists) {
+            await docRef.update(dataToUpdate);
+            const updatedDoc = await docRef.get();
+            return { success: true, data: serializeData({ id: updatedDoc.id, ...updatedDoc.data() }), error: null };
         }
 
         return { success: false, error: 'Submission to update not found.', data: null };
@@ -157,27 +142,21 @@ export async function updateSubmissionStatus(id: string, status: 'payment_pendin
 }
 
 export async function markSubmissionsAsPending(ids: string[]) {
+    if (!ids || ids.length === 0) {
+        return { success: true, data: { updatedIds: [] }, error: null };
+    }
     try {
-        let updated = false;
-        const registrations = await readData(registrationsPath);
-        registrations.forEach(r => {
-            if (ids.includes(r.id)) {
-                r.status = 'payment_pending';
-                updated = true;
-            }
+        const batch = db.batch();
+        ids.forEach(id => {
+            // We have to try updating in both collections, as we don't know the type.
+            // This is safe; if a doc doesn't exist, the batch write for it is ignored.
+            const regRef = db.collection('registrations').doc(id);
+            batch.update(regRef, { status: 'payment_pending' });
+            
+            const showcaseRef = db.collection('showcases').doc(id);
+            batch.update(showcaseRef, { status: 'payment_pending' });
         });
-        if(updated) await writeData(registrationsPath, registrations);
-
-        updated = false;
-        const showcases = await readData(showcasesPath);
-        showcases.forEach(s => {
-            if (ids.includes(s.id)) {
-                s.status = 'payment_pending';
-                updated = true;
-            }
-        });
-        if(updated) await writeData(showcasesPath, showcases);
-
+        await batch.commit();
         return { success: true, data: { updatedIds: ids }, error: null };
     } catch (error: any) {
         console.error('Error marking submissions as pending:', error);
