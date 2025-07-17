@@ -1,9 +1,10 @@
 'use client';
 
-import { useState, useTransition } from 'react';
+import { useState, useTransition, useEffect, Suspense } from 'react';
 import { useForm, SubmitHandler } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
+import { useSearchParams } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
@@ -11,7 +12,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { Toaster } from '@/components/ui/toaster';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, University, Printer, ArrowLeft, Ticket, Share2 } from 'lucide-react';
-import { findSubmissionByEmail, updateSubmissionStatus } from '@/app/actions/registration-actions';
+import { findSubmissionByEmail, findSubmissionById, updateSubmissionStatus } from '@/app/actions/registration-actions';
 import { Separator } from '@/components/ui/separator';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Logo } from '@/components/logo';
@@ -44,14 +45,17 @@ const receiptSchema = z.object({
 type ReceiptFormValues = z.infer<typeof receiptSchema>;
 
 
-export default function PaymentPage() {
+function PaymentFlow() {
+  const searchParams = useSearchParams();
+  const idFromUrl = searchParams.get('id');
+
   const [submission, setSubmission] = useState<Submission | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [isPending, startTransition] = useTransition();
   const { toast } = useToast();
   
   // Overall flow state
-  const [step, setStep] = useState<'email' | 'method' | 'details' | 'confirm' | 'success'>('email');
+  const [step, setStep] = useState<'initial' | 'email' | 'method' | 'details' | 'confirm' | 'success'>('initial');
 
   const emailForm = useForm<EmailFormValues>({
     resolver: zodResolver(emailSchema),
@@ -65,6 +69,44 @@ export default function PaymentPage() {
     resolver: zodResolver(receiptSchema),
     defaultValues: { receiptNumber: '' },
   });
+  
+  const processSubmission = (data: Submission | null, error?: string | null) => {
+    if (data) {
+        setSubmission(data);
+        if (data.status === 'paid') {
+          setStep('success');
+        } else if (data.status === 'awaiting_confirmation') {
+          setStep('confirm');
+        } else {
+          // Includes 'payment_pending' and new submissions
+          if (data.paymentMethod) {
+            methodForm.setValue('method', data.paymentMethod);
+            setStep('details');
+          } else {
+            setStep('method');
+          }
+        }
+    } else {
+      toast({ title: 'Not Found', description: error || 'Could not find your submission.', variant: 'destructive' });
+      setStep('email');
+    }
+    setIsLoading(false);
+  }
+
+  useEffect(() => {
+    async function fetchInitialSubmission() {
+      if (idFromUrl) {
+        setIsLoading(true);
+        const result = await findSubmissionById(idFromUrl);
+        processSubmission(result.data, result.error);
+      } else {
+        setStep('email');
+      }
+    }
+    fetchInitialSubmission();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [idFromUrl]);
+
 
   const resetState = () => {
     setSubmission(null);
@@ -78,35 +120,15 @@ export default function PaymentPage() {
     setIsLoading(true);
     setSubmission(null);
     const result = await findSubmissionByEmail(email);
-
-    if (result.success && result.data) {
-        setSubmission(result.data);
-        if (result.data.status === 'paid') {
-          setStep('success');
-        } else if (result.data.status === 'awaiting_confirmation') {
-          setStep('confirm');
-        } else if (result.data.status === 'payment_pending') {
-          if (result.data.paymentMethod) {
-            methodForm.setValue('method', result.data.paymentMethod);
-            setStep('details');
-          } else {
-            setStep('method');
-          }
-        } else {
-            toast({ title: 'Not Selected', description: 'You have not been selected for payment at this time. Please wait for an invitation.' });
-            resetState();
-        }
-    } else {
-      toast({ title: 'Not Found', description: result.error, variant: 'destructive' });
-      resetState();
-    }
-    setIsLoading(false);
+    processSubmission(result.data, result.error);
   };
 
   const handleMethodSubmit: SubmitHandler<PaymentMethodValues> = async ({ method }) => {
     if (!submission) return;
     startTransition(async () => {
-      const result = await updateSubmissionStatus(submission.id, 'payment_pending', { paymentMethod: method });
+      // The user might not have a status yet if they came directly after registration
+      const statusToSet = submission.status === 'payment_pending' ? 'payment_pending' : 'awaiting_confirmation';
+      const result = await updateSubmissionStatus(submission.id, statusToSet, { paymentMethod: method });
       if (result.success) {
         setSubmission(prev => prev ? { ...prev, paymentMethod: method } : null);
         setStep('details');
@@ -132,6 +154,18 @@ export default function PaymentPage() {
   const handlePrint = () => {
     window.print();
   }
+  
+  const renderInitialLoading = () => (
+     <Card className="w-full max-w-md">
+      <CardHeader>
+        <CardTitle>Confirm Your Spot</CardTitle>
+        <CardDescription>Looking up your registration details...</CardDescription>
+      </CardHeader>
+      <CardContent className="flex justify-center items-center py-10">
+        <Loader2 className="mr-2 h-8 w-8 animate-spin" />
+      </CardContent>
+    </Card>
+  )
 
   const renderEmailForm = () => (
     <Card className="w-full max-w-md">
@@ -341,6 +375,7 @@ export default function PaymentPage() {
 
   const renderStep = () => {
     switch(step) {
+        case 'initial': return renderInitialLoading();
         case 'email': return renderEmailForm();
         case 'method': return renderMethodSelection();
         case 'details': return renderPaymentDetails();
@@ -350,10 +385,16 @@ export default function PaymentPage() {
     }
   }
 
+  return renderStep();
+}
+
+export default function PaymentPage() {
   return (
     <>
       <main className="min-h-screen bg-background flex flex-col items-center justify-center p-4 print:bg-white print:text-black">
-        {renderStep()}
+        <Suspense fallback={<div className="flex items-center gap-2"><Loader2 className="animate-spin" />Loading...</div>}>
+            <PaymentFlow />
+        </Suspense>
       </main>
       <Toaster />
     </>

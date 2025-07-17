@@ -11,6 +11,8 @@ import { useToast } from '@/hooks/use-toast';
 import { useTransition } from 'react';
 import { Loader2 } from 'lucide-react';
 import { saveRegistration } from '@/app/actions/registration-actions';
+import Link from 'next/link';
+import { ToastAction } from '@/components/ui/toast';
 
 interface RegistrationFormProps {
   onRegistrationSuccess?: () => void;
@@ -49,14 +51,19 @@ export function RegistrationForm({ onRegistrationSuccess }: RegistrationFormProp
     startTransition(async () => {
       const result = await saveRegistration(values);
 
-      if (result.success) {
+      if (result.success && result.data) {
         form.reset();
         
         toast({
           title: "Registration Successful!",
-          description: "Thank you for registering. We've received your information.",
+          description: "Your information has been received. Please proceed to payment.",
           variant: "default",
-          duration: 5000,
+          duration: 10000, // Keep toast open longer
+          action: (
+             <ToastAction altText="Pay Now" asChild>
+                <Link href={`/payment?id=${result.data.id}`}>Pay Now</Link>
+             </ToastAction>
+          )
         });
         
         if(onRegistrationSuccess) {
@@ -148,7 +155,7 @@ export function RegistrationForm({ onRegistrationSuccess }: RegistrationFormProp
             <FormItem>
               <FormLabel>Years of Experience<span className="text-destructive">*</span></FormLabel>
               <FormControl>
-                <Input type="number" placeholder="e.g., 5" {...field} />
+                <Input type="number" placeholder="e.g., 5" {...field} value={field.value ?? ''} />
               </FormControl>
               <FormMessage />
             </FormItem>

@@ -41,7 +41,7 @@ export async function saveRegistration(formData: Record<string, any>) {
     return handleApiResponse(response);
   } catch (error: any) {
     console.error('Error saving registration:', error);
-    return { success: false, error: 'Could not connect to the server.' };
+    return { success: false, error: 'Could not connect to the server.', data: null };
   }
 }
 
