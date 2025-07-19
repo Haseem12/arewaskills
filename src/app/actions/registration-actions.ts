@@ -31,9 +31,14 @@ async function handleApiResponse(response: Response) {
   }
 }
 
-async function apiFetch(endpoint: string, options: RequestInit = {}) {
+async function apiFetch(options: RequestInit = {}, queryParams: Record<string, string> = {}) {
+  const url = new URL(API_BASE_URL);
+  for (const [key, value] of Object.entries(queryParams)) {
+    url.searchParams.append(key, value);
+  }
+
   try {
-    const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+    const response = await fetch(url.toString(), {
       ...options,
       headers: {
         'Content-Type': 'application/json',
@@ -43,57 +48,55 @@ async function apiFetch(endpoint: string, options: RequestInit = {}) {
     });
     return handleApiResponse(response);
   } catch (error: any) {
-    console.error(`API fetch error for endpoint ${endpoint}:`, error);
+    console.error(`API fetch error for ${url.toString()}:`, error);
     return { success: false, error: 'Network error or API is unreachable.', data: null };
   }
 }
 
-
 export async function saveRegistration(formData: Record<string, any>) {
-  return apiFetch('/registrations', {
+  return apiFetch({
     method: 'POST',
-    body: JSON.stringify(formData),
-  });
+    body: JSON.stringify({ type: 'registration', ...formData }),
+  }, { action: 'create' });
 }
 
 export async function getRegistrations() {
-  return apiFetch('/registrations');
+  return apiFetch({ method: 'GET' }, { action: 'get_all', type: 'registrations' });
 }
 
 export async function saveShowcase(formData: Record<string, any>) {
-  return apiFetch('/showcases', {
+  return apiFetch({
     method: 'POST',
-    body: JSON.stringify(formData),
-  });
+    body: JSON.stringify({ type: 'showcase', ...formData }),
+  }, { action: 'create' });
 }
 
 export async function getShowcases() {
-  return apiFetch('/showcases');
+  return apiFetch({ method: 'GET' }, { action: 'get_all', type: 'showcases' });
 }
 
 export async function findSubmissionById(id: string) {
-  return apiFetch(`/submissions/${id}`);
+  return apiFetch({ method: 'GET' }, { action: 'find_by_id', id });
 }
 
 export async function findSubmissionByEmail(email: string) {
-  // The email is passed as a query parameter for this specific endpoint
-  return apiFetch(`/submissions/find?email=${encodeURIComponent(email)}`);
+  return apiFetch({ method: 'GET' }, { action: 'find_by_email', email });
 }
 
 export async function updateSubmissionStatus(id: string, status: 'payment_pending' | 'awaiting_confirmation' | 'paid', details?: Record<string, any>) {
-  const body = { ...details, status };
-  return apiFetch(`/submissions/${id}`, {
-    method: 'PATCH',
+  const body = { id, updates: { ...details, status } };
+  return apiFetch({
+    method: 'POST', // Using POST for update to simplify PHP
     body: JSON.stringify(body),
-  });
+  }, { action: 'update_status' });
 }
 
 export async function markSubmissionsAsPending(ids: string[]) {
   if (!ids || ids.length === 0) {
     return { success: true, data: { updatedIds: [] }, error: null };
   }
-  return apiFetch('/submissions/mark-pending', {
+  return apiFetch({
     method: 'POST',
     body: JSON.stringify({ ids }),
-  });
+  }, { action: 'mark_pending' });
 }
