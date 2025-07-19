@@ -2,7 +2,7 @@
 'use server';
 
 // NOTE: Ensure this base URL is correct for your deployed PHP script.
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://www.arewaskills.com.ng/api/event.php';
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://sajfoods.net/api/event/event.php';
 
 async function handleApiResponse(response: Response) {
   if (!response.ok) {
