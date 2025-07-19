@@ -45,7 +45,7 @@ export default function EventPage() {
             <div className="flex items-center gap-4 text-center md:text-left">
               <Logo className="h-20 w-20 md:h-24 md:w-24 flex-shrink-0" />
               <div>
-                <h1 className="text-4xl md:text-6xl font-headline font-bold text-primary">Arewa Tech Connect</h1>
+                <h1 className="text-4xl md:text-6xl font-headline font-bold text-primary">Northern Tech Exchange</h1>
                 <p className="text-lg md:text-xl text-muted-foreground mt-1">Dev & AI Hangout</p>
               </div>
             </div>
