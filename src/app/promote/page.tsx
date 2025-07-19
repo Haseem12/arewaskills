@@ -62,7 +62,7 @@ export default function PromotePage() {
     ctx.fillStyle = 'white';
     ctx.textAlign = 'left';
     ctx.font = 'bold 40px Inter, sans-serif';
-    ctx.fillText("Arewa Tech Connect", 150, 80);
+    ctx.fillText("Northern Tech Exchange", 150, 80);
     ctx.font = '24px Inter, sans-serif';
     ctx.fillStyle = 'hsl(180, 15%, 94%)';
     ctx.fillText("Dev & AI Hangout", 150, 110);
@@ -130,13 +130,13 @@ export default function PromotePage() {
 
     ctx.font = 'bold 36px Inter, sans-serif';
     ctx.fillStyle = 'white';
-    ctx.fillText('Arewa Tech Connect', 80, height/2 + 60);
+    ctx.fillText('Northern Tech Exchange', 80, height/2 + 60);
 
     // Footer
     ctx.font = '20px Inter, sans-serif';
     ctx.fillStyle = 'hsl(180, 15%, 80%)';
     ctx.textAlign = 'center';
-    ctx.fillText('Join us for a day of learning, networking, and innovation. | #ArewaTechConnect', width / 2, height - 50);
+    ctx.fillText('Join us for a day of learning, networking, and innovation. | #NorthernTechExchange', width / 2, height - 50);
   };
 
   useEffect(() => {
@@ -169,7 +169,7 @@ export default function PromotePage() {
     const canvas = canvasRef.current;
     if (canvas) {
       const link = document.createElement('a');
-      link.download = `arewa-tech-connect-promo-${bannerType}.png`;
+      link.download = `northern-tech-exchange-promo-${bannerType}.png`;
       link.href = canvas.toDataURL('image/png');
       link.click();
     }

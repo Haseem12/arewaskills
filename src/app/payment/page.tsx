@@ -70,7 +70,8 @@ function PaymentFlow() {
     defaultValues: { receiptNumber: '' },
   });
   
-  const processSubmission = (data: Submission | null, error?: string | null) => {
+  const processSubmission = (result: {data: Submission | null, error?: string | null}) => {
+    const { data, error } = result;
     if (data) {
         setSubmission(data);
         if (data.status === 'paid') {
@@ -98,7 +99,7 @@ function PaymentFlow() {
       if (idFromUrl) {
         setIsLoading(true);
         const result = await findSubmissionById(idFromUrl);
-        processSubmission(result.data, result.error);
+        processSubmission(result as any);
       } else {
         setStep('email');
       }
@@ -120,7 +121,7 @@ function PaymentFlow() {
     setIsLoading(true);
     setSubmission(null);
     const result = await findSubmissionByEmail(email);
-    processSubmission(result.data, result.error);
+    processSubmission(result as any);
   };
 
   const handleMethodSubmit: SubmitHandler<PaymentMethodValues> = async ({ method }) => {
@@ -266,12 +267,12 @@ function PaymentFlow() {
             <CardContent>
                 <div className="border rounded-lg p-4 space-y-4 bg-muted/30">
                     <div className="flex justify-between items-center print:block">
-                        <h3 className="text-lg font-semibold text-primary">Arewa Tech Connect</h3>
+                        <h3 className="text-lg font-semibold text-primary">Northern Tech Exchange</h3>
                         <div className="print:hidden"><Logo className="h-12 w-12"/></div>
                     </div>
                     <Separator />
                     <div className="grid grid-cols-2 gap-2 text-sm">
-                        <span className="text-muted-foreground">Account Name:</span> <span>Arewa Tech Connect</span>
+                        <span className="text-muted-foreground">Account Name:</span> <span>Northern Tech Exchange</span>
                         <span className="text-muted-foreground">Account Number:</span> <span>1234567890</span>
                         <span className="text-muted-foreground">Bank:</span> <span>Tech Bank Plc</span>
                         <span className="text-muted-foreground">Amount:</span> <span className="font-bold">N5,000.00</span>
@@ -347,7 +348,7 @@ function PaymentFlow() {
     <Card className="w-full max-w-md text-center">
         <CardHeader>
             <CardTitle>Payment Confirmed!</CardTitle>
-            <CardDescription>Your spot at Arewa Tech Connect is secure. We look forward to seeing you!</CardDescription>
+            <CardDescription>Your spot at Northern Tech Exchange is secure. We look forward to seeing you!</CardDescription>
         </CardHeader>
         <CardContent>
             <div className="p-6 bg-green-100 dark:bg-green-900/50 rounded-lg">

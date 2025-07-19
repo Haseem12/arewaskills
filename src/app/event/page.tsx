@@ -61,7 +61,7 @@ export default function EventPage() {
                 </DialogTrigger>
                 <DialogContent className="sm:max-w-[425px] max-h-[90vh] overflow-y-auto">
                   <DialogHeader>
-                    <DialogTitle className="text-2xl text-primary">Register for Arewa Tech Connect</DialogTitle>
+                    <DialogTitle className="text-2xl text-primary">Register for Northern Tech Exchange</DialogTitle>
                     <DialogDescription>
                       Fill out the form below to secure your spot at the event.
                     </DialogDescription>

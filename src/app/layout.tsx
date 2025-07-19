@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import './globals.css';
 
 export const metadata: Metadata = {
-  title: 'Arewa Tech Connect - Dev & AI Hangout',
+  title: 'Northern Tech Exchange - Dev & AI Hangout',
   description: 'An exclusive gathering of tech enthusiasts and professionals in Northern Nigeria. Join us to connect, learn, and showcase your work.',
 };
 

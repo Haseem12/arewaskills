@@ -116,7 +116,7 @@ function TicketContent() {
             <CardHeader className="bg-primary text-primary-foreground p-6">
                 <div className="flex items-center justify-between">
                     <div>
-                        <CardTitle className="text-3xl font-bold">Arewa Tech Connect</CardTitle>
+                        <CardTitle className="text-3xl font-bold">Northern Tech Exchange</CardTitle>
                         <CardDescription className="text-primary-foreground/80">Dev & AI Hangout</CardDescription>
                     </div>
                     <Logo className="h-16 w-16 bg-white/20 rounded-full p-1" />

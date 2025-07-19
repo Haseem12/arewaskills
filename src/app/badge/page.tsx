@@ -74,7 +74,7 @@ function BadgeGenerator() {
     ctx.fillStyle = 'white';
     ctx.textAlign = 'left';
     ctx.font = 'bold 50px Inter, sans-serif';
-    ctx.fillText("Arewa Tech Connect", 220, 140);
+    ctx.fillText("Northern Tech Exchange", 220, 140);
     ctx.font = '30px Inter, sans-serif';
     ctx.fillStyle = 'hsl(180, 15%, 94%)'; // secondary-foreground
     ctx.fillText("Dev & AI Hangout", 220, 185);
@@ -221,7 +221,7 @@ function BadgeGenerator() {
     const canvas = canvasRef.current;
     if (canvas) {
       const link = document.createElement('a');
-      link.download = 'arewa-tech-connect-badge.png';
+      link.download = 'northern-tech-exchange-badge.png';
       link.href = canvas.toDataURL('image/png');
       link.click();
     }
@@ -289,5 +289,3 @@ export default function BadgePage() {
         </main>
     )
 }
-
-    

@@ -7,7 +7,7 @@ export function Logo(props: SVGProps<SVGSVGElement>) {
       viewBox="0 0 100 100"
       width="100"
       height="100"
-      aria-label="Arewa Tech Connect Logo"
+      aria-label="Northern Tech Exchange Logo"
       {...props}
     >
       <style>
