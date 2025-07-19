@@ -1,92 +1,87 @@
 
 'use server';
 
-import fs from 'fs/promises';
-import path from 'path';
+// --- API Configuration ---
+// Make sure to set this in your environment variables for production
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://www.sajfoods.net/api/event/event.php';
 
-// --- File Paths ---
-const registrationsPath = path.join(process.cwd(), 'data/registrations.json');
-const showcasesPath = path.join(process.cwd(), 'data/showcases.json');
-const postsPath = path.join(process.cwd(), 'data/posts.json');
-
-// --- Helper Functions ---
-async function readData(filePath: string) {
+async function apiFetch(params: URLSearchParams, options: RequestInit = {}) {
+  const url = `${API_BASE_URL}?${params.toString()}`;
   try {
-    const data = await fs.readFile(filePath, 'utf-8');
-    return JSON.parse(data);
-  } catch (error: any) {
-    if (error.code === 'ENOENT') {
-      return []; // Return empty array if file doesn't exist
+    const response = await fetch(url, {
+      next: { revalidate: 0 }, // No caching
+      ...options,
+    });
+
+    if (!response.ok) {
+      // Try to parse error from PHP
+      try {
+        const errorBody = await response.json();
+        throw new Error(errorBody.error || `HTTP error! status: ${response.status}`);
+      } catch (e: any) {
+         // If response is not JSON, use status text
+         throw new Error(e.message || response.statusText);
+      }
     }
-    console.error(`Error reading data from ${filePath}:`, error);
-    throw new Error('Could not read data.');
-  }
-}
 
-async function writeData(filePath: string, data: any) {
-  try {
-    await fs.writeFile(filePath, JSON.stringify(data, null, 2), 'utf-8');
-  } catch (error) {
-    console.error(`Error writing data to ${filePath}:`, error);
-    throw new Error('Could not write data.');
+    const result = await response.json();
+    if (!result.success) {
+      throw new Error(result.error || 'API returned an error.');
+    }
+    
+    return result.data;
+  } catch (error: any) {
+    console.error('API Fetch Error:', error);
+    throw new Error(error.message || 'An unknown network error occurred.');
   }
-}
-
-function generateSlug(title: string) {
-  return title
-    .toLowerCase()
-    .replace(/ /g, '-')
-    .replace(/[^\w-]+/g, '');
 }
 
 // --- Registration and Showcase Actions ---
 
 export async function saveRegistration(formData: Record<string, any>) {
   try {
-    const registrations = await readData(registrationsPath);
-    const newRegistration = {
-      ...formData,
-      id: new Date().getTime().toString(),
-      submittedAt: new Date().toISOString(),
-      type: 'registration',
-    };
-    registrations.unshift(newRegistration);
-    await writeData(registrationsPath, registrations);
-    return { success: true, data: newRegistration, error: null };
+    const params = new URLSearchParams({ action: 'create' });
+    const data = await apiFetch(params, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ type: 'registration', ...formData }),
+    });
+    return { success: true, data, error: null };
   } catch (error: any) {
     return { success: false, data: null, error: error.message };
   }
 }
 
+export async function saveShowcase(formData: Record<string, any>) {
+  try {
+    const params = new URLSearchParams({ action: 'create' });
+    const data = await apiFetch(params, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ type: 'showcase', ...formData }),
+    });
+    return { success: true, data, error: null };
+  } catch (error: any) {
+    return { success: false, data: null, error: error.message };
+  }
+}
+
+
 export async function getRegistrations() {
   try {
-    const data = await readData(registrationsPath);
+    const params = new URLSearchParams({ action: 'get_all', type: 'registrations' });
+    const data = await apiFetch(params);
     return { success: true, data, error: null };
   } catch (error: any) {
     return { success: false, data: [], error: error.message };
   }
 }
 
-export async function saveShowcase(formData: Record<string, any>) {
-  try {
-    const showcases = await readData(showcasesPath);
-    const newShowcase = {
-      ...formData,
-      id: new Date().getTime().toString(),
-      submittedAt: new Date().toISOString(),
-      type: 'showcase',
-    };
-    showcases.unshift(newShowcase);
-    await writeData(showcasesPath, showcases);
-    return { success: true, data: newShowcase, error: null };
-  } catch (error: any) {
-    return { success: false, data: null, error: error.message };
-  }
-}
 
 export async function getShowcases() {
   try {
-    const data = await readData(showcasesPath);
+    const params = new URLSearchParams({ action: 'get_all', type: 'showcases' });
+    const data = await apiFetch(params);
     return { success: true, data, error: null };
   } catch (error: any) {
     return { success: false, data: [], error: error.message };
@@ -95,70 +90,36 @@ export async function getShowcases() {
 
 export async function findSubmissionById(id: string) {
   try {
-    const registrations = await readData(registrationsPath);
-    const showcases = await readData(showcasesPath);
-    const allSubmissions = [...registrations, ...showcases];
-    const submission = allSubmissions.find(s => s.id === id);
-    if (submission) {
-      return { success: true, data: submission, error: null };
-    }
-    return { success: false, data: null, error: 'Submission not found.' };
+    const params = new URLSearchParams({ action: 'find_by_id', id });
+    const data = await apiFetch(params);
+    return { success: true, data, error: null };
   } catch (error: any) {
-    return { success: false, data: null, error: error.message };
+    return { success: false, data: null, error: 'Submission not found.' };
   }
 }
 
 export async function findSubmissionByEmail(email: string) {
   try {
-    const registrations = await readData(registrationsPath);
-    const showcases = await readData(showcasesPath);
-    const lowercasedEmail = email.toLowerCase();
-    
-    let submission = registrations.find(s => s.email.toLowerCase() === lowercasedEmail);
-    if (submission) return { success: true, data: submission, error: null };
-
-    submission = showcases.find(s => s.presenterEmail.toLowerCase() === lowercasedEmail);
-    if (submission) return { success: true, data: submission, error: null };
-
-    return { success: false, data: null, error: 'Submission not found with that email.' };
+    const params = new URLSearchParams({ action: 'find_by_email', email });
+    const data = await apiFetch(params);
+    return { success: true, data, error: null };
   } catch (error: any) {
-    return { success: false, data: null, error: error.message };
+    return { success: false, data: null, error: 'Submission not found with that email.' };
   }
 }
 
 export async function updateSubmissionStatus(id: string, status: string, details?: Record<string, any>) {
   try {
-    const regResult = await findAndUpdate(registrationsPath, id, { ...details, status });
-    if (regResult.found) {
-      return { success: true, data: { id, ...details, status }, error: null };
-    }
-
-    const showcaseResult = await findAndUpdate(showcasesPath, id, { ...details, status });
-    if (showcaseResult.found) {
-        return { success: true, data: { id, ...details, status }, error: null };
-    }
-    
-    return { success: false, data: null, error: 'Submission not found to update.' };
+    const params = new URLSearchParams({ action: 'update_status' });
+    const data = await apiFetch(params, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id, updates: { ...details, status } }),
+    });
+    return { success: true, data, error: null };
   } catch (error: any) {
     return { success: false, data: null, error: error.message };
   }
-}
-
-async function findAndUpdate(filePath: string, id: string, updates: Record<string, any>) {
-    const items = await readData(filePath);
-    let found = false;
-    const updatedItems = items.map((item: {id: string}) => {
-        if (item.id === id) {
-            found = true;
-            return { ...item, ...updates };
-        }
-        return item;
-    });
-
-    if (found) {
-        await writeData(filePath, updatedItems);
-    }
-    return { found };
 }
 
 
@@ -166,31 +127,15 @@ export async function markSubmissionsAsPending(ids: string[]) {
   if (!ids || ids.length === 0) {
     return { success: true, data: { updatedIds: [] }, error: null };
   }
-  
-  let updatedCount = 0;
   try {
-    const registrations = await readData(registrationsPath);
-    const updatedRegistrations = registrations.map((r: any) => {
-        if(ids.includes(r.id)) {
-            r.status = 'payment_pending';
-            updatedCount++;
-        }
-        return r;
+    const params = new URLSearchParams({ action: 'mark_pending' });
+    const data = await apiFetch(params, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ids }),
     });
-    await writeData(registrationsPath, updatedRegistrations);
-
-    const showcases = await readData(showcasesPath);
-    const updatedShowcases = showcases.map((s: any) => {
-        if(ids.includes(s.id)) {
-            s.status = 'payment_pending';
-            updatedCount++;
-        }
-        return s;
-    });
-    await writeData(showcasesPath, updatedShowcases);
-
-    return { success: true, data: { updatedCount, requestedIds: ids }, error: null };
-  } catch(error: any) {
+    return { success: true, data, error: null };
+  } catch (error: any) {
      return { success: false, data: null, error: error.message };
   }
 }
@@ -199,16 +144,13 @@ export async function markSubmissionsAsPending(ids: string[]) {
 
 export async function createPost(formData: Omit<any, 'slug' | 'date'>) {
   try {
-    const posts = await readData(postsPath);
-    const newPost = {
-      ...formData,
-      slug: generateSlug(formData.title),
-      date: new Date().toISOString(),
-      tags: formData.tags.split(',').map((t: string) => t.trim()),
-    };
-    posts.unshift(newPost);
-    await writeData(postsPath, posts);
-    return { success: true, data: newPost, error: null };
+    const params = new URLSearchParams({ action: 'create_post' });
+    const data = await apiFetch(params, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(formData),
+    });
+    return { success: true, data, error: null };
   } catch (error: any) {
     return { success: false, data: null, error: error.message };
   }
@@ -216,8 +158,14 @@ export async function createPost(formData: Omit<any, 'slug' | 'date'>) {
 
 export async function getPosts() {
   try {
-    const data = await readData(postsPath);
-    return { success: true, data, error: null };
+    const params = new URLSearchParams({ action: 'get_posts' });
+    const data = await apiFetch(params);
+    // The PHP script returns tags as a comma-separated string. We need to convert it to an array.
+    const formattedData = data.map((post: any) => ({
+        ...post,
+        tags: typeof post.tags === 'string' ? post.tags.split(',').map((t: string) => t.trim()) : [],
+    }));
+    return { success: true, data: formattedData, error: null };
   } catch (error: any) {
     return { success: false, data: [], error: error.message };
   }
@@ -225,13 +173,15 @@ export async function getPosts() {
 
 export async function getPostBySlug(slug: string) {
   try {
-    const posts = await readData(postsPath);
-    const post = posts.find((p: any) => p.slug === slug);
-    if (post) {
-      return { success: true, data: post, error: null };
+    const params = new URLSearchParams({ action: 'get_post_by_slug', slug });
+    const data = await apiFetch(params);
+     // The PHP script returns tags as a comma-separated string. We need to convert it to an array.
+    const formattedData = {
+        ...data,
+        tags: typeof data.tags === 'string' ? data.tags.split(',').map((t: string) => t.trim()) : [],
     }
-    return { success: false, data: null, error: 'Post not found.' };
+    return { success: true, data: formattedData, error: null };
   } catch (error: any) {
-    return { success: false, data: null, error: error.message };
+    return { success: false, data: null, error: 'Post not found.' };
   }
 }

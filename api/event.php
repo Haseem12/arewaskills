@@ -55,6 +55,14 @@ function jsonBody() {
     return json_decode($input, true);
 }
 
+function generateSlug($title) {
+    $slug = strtolower($title);
+    $slug = preg_replace('/[^a-z0-9\s-]/', '', $slug); // Remove special chars
+    $slug = preg_replace('/[\s-]+/', '-', $slug);      // Replace spaces and hyphens with a single hyphen
+    $slug = trim($slug, '-');                         // Trim hyphens from start/end
+    return $slug;
+}
+
 
 // --- API Routing using GET action parameter ---
 $method = $_SERVER['REQUEST_METHOD'];
@@ -69,7 +77,6 @@ if ($method === 'POST' && $action === 'create') {
 
     $table = ($data['type'] === 'registration') ? 'registrations' : 'showcases';
     if ($table === 'showcases' && $data['type'] !== 'showcase') error('Invalid type for showcases table', 400);
-
 
     // Add server-generated fields
     $data['id'] = uniqid(rand(), true);
@@ -113,7 +120,7 @@ if ($method === 'GET' && $action === 'find_by_id') {
     $id = $_GET['id'] ?? '';
     if (empty($id)) error('No ID provided.', 400);
 
-    foreach (['registrations', 'showcases'] as $table) {
+    foreach (['registrations', 'showcases', 'posts'] as $table) {
         $stmt = $conn->prepare("SELECT * FROM `$table` WHERE id = ?");
         $stmt->bind_param('s', $id);
         $stmt->execute();
@@ -198,6 +205,72 @@ if ($method === 'POST' && $action === 'mark_pending') {
         }
     }
     respond(['updatedCount' => $updated_count, 'requestedIds' => $ids]);
+}
+
+// --- Blog Post Handlers ---
+
+// Create a new blog post
+if ($method === 'POST' && $action === 'create_post') {
+    $data = jsonBody();
+    if (empty($data) || !isset($data['title'])) error('Invalid post data.', 400);
+
+    // Add server-generated fields
+    $data['id'] = uniqid(rand(), true);
+    $data['date'] = (new DateTime())->format('Y-m-d H:i:sP');
+    $data['slug'] = generateSlug($data['title']);
+
+    // Ensure all required fields for the 'posts' table are present, even if empty
+    $required_fields = ['title', 'author', 'excerpt', 'content', 'image', 'ai_hint', 'tags'];
+    foreach($required_fields as $field) {
+        if (!isset($data[$field])) {
+            $data[$field] = ''; // Set a default empty value
+        }
+    }
+
+    $fields = array_keys($data);
+    $placeholders = implode(',', array_fill(0, count($fields), '?'));
+    $types = str_repeat('s', count($fields));
+    $values = array_values($data);
+
+    $stmt = $conn->prepare("INSERT INTO `posts` (`" . implode('`,`', $fields) . "`) VALUES ($placeholders)");
+    if (!$stmt) error("Server error: Failed to prepare post statement.", 500);
+
+    $stmt->bind_param($types, ...$values);
+
+    if ($stmt->execute()) {
+        http_response_code(201);
+        respond($data);
+    } else {
+        error("Server error: Could not save post.", 500);
+    }
+}
+
+// Get all blog posts
+if ($method === 'GET' && $action === 'get_posts') {
+    $result = $conn->query("SELECT * FROM `posts` ORDER BY date DESC");
+    if (!$result) error("Server error: Could not fetch posts.", 500);
+
+    $rows = [];
+    while ($row = $result->fetch_assoc()) {
+        $rows[] = $row;
+    }
+    respond($rows);
+}
+
+// Get a single blog post by its slug
+if ($method === 'GET' && $action === 'get_post_by_slug') {
+    $slug = $_GET['slug'] ?? '';
+    if (empty($slug)) error('No slug provided.', 400);
+
+    $stmt = $conn->prepare("SELECT * FROM `posts` WHERE slug = ? LIMIT 1");
+    $stmt->bind_param('s', $slug);
+    $stmt->execute();
+    $res = $stmt->get_result();
+    if ($row = $res->fetch_assoc()) {
+        respond($row);
+    } else {
+        error('Post not found.', 404);
+    }
 }
 
 
