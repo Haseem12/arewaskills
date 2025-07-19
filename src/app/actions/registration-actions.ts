@@ -33,7 +33,7 @@ async function handleApiResponse(response: Response) {
 
 async function apiFetch(endpoint: string, options: RequestInit = {}) {
   try {
-    const response = await fetch(`${API_BASE_URL}/${endpoint}`, {
+    const response = await fetch(`${API_BASE_URL}${endpoint}`, {
       ...options,
       headers: {
         'Content-Type': 'application/json',
@@ -50,39 +50,39 @@ async function apiFetch(endpoint: string, options: RequestInit = {}) {
 
 
 export async function saveRegistration(formData: Record<string, any>) {
-  return apiFetch('registrations', {
+  return apiFetch('/registrations', {
     method: 'POST',
     body: JSON.stringify(formData),
   });
 }
 
 export async function getRegistrations() {
-  return apiFetch('registrations');
+  return apiFetch('/registrations');
 }
 
 export async function saveShowcase(formData: Record<string, any>) {
-  return apiFetch('showcases', {
+  return apiFetch('/showcases', {
     method: 'POST',
     body: JSON.stringify(formData),
   });
 }
 
 export async function getShowcases() {
-  return apiFetch('showcases');
+  return apiFetch('/showcases');
 }
 
 export async function findSubmissionById(id: string) {
-  return apiFetch(`submissions/${id}`);
+  return apiFetch(`/submissions/${id}`);
 }
 
 export async function findSubmissionByEmail(email: string) {
   // The email is passed as a query parameter for this specific endpoint
-  return apiFetch(`submissions/find?email=${encodeURIComponent(email)}`);
+  return apiFetch(`/submissions/find?email=${encodeURIComponent(email)}`);
 }
 
 export async function updateSubmissionStatus(id: string, status: 'payment_pending' | 'awaiting_confirmation' | 'paid', details?: Record<string, any>) {
   const body = { ...details, status };
-  return apiFetch(`submissions/${id}`, {
+  return apiFetch(`/submissions/${id}`, {
     method: 'PATCH',
     body: JSON.stringify(body),
   });
@@ -92,7 +92,7 @@ export async function markSubmissionsAsPending(ids: string[]) {
   if (!ids || ids.length === 0) {
     return { success: true, data: { updatedIds: [] }, error: null };
   }
-  return apiFetch('submissions/mark-pending', {
+  return apiFetch('/submissions/mark-pending', {
     method: 'POST',
     body: JSON.stringify({ ids }),
   });
