@@ -1,23 +1,29 @@
 # PHP API Implementation Guide
 
-This guide outlines the requirements and provides a complete example for the PHP backend API that the Northern Tech Exchange Next.js application will communicate with.
+This guide outlines the requirements and provides complete examples for the two PHP backend API files that the Northern Tech Exchange Next.js application will communicate with.
 
 ## How to Use
 
-1.  **Create a PHP file** on your server (e.g., `api/event.php`).
-2.  **Copy the code** from the "Complete PHP Script" section below into that file.
-3.  **Update your database credentials** in the script (`$host`, `$dbname`, `$username`, `$password`).
-4.  **Ensure your Next.js application** has the correct `NEXT_PUBLIC_API_URL` in its environment variables, pointing to the location of your PHP file (e.g., `https://www.arewaskills.com.ng/api/event.php`).
-5.  **Set up the necessary database tables.** Use the SQL schemas provided below.
+1.  **Create PHP Files**: Create two files on your server:
+    *   `api/event/event.php` for handling registrations and showcases.
+    *   `api/event/blog.php` for handling blog posts.
+2.  **Copy the Code**: Copy the corresponding scripts from the sections below into each file.
+3.  **Update Database Credentials**: In both PHP files, update your database credentials (`$host`, `$dbname`, `$username`, `$password`).
+4.  **Set Up Database Tables**: Use the SQL schemas provided below to create the necessary tables in your database.
+5.  **Verify Endpoints**: Ensure your Next.js application is configured to point to the correct URLs:
+    *   Events/Registrations: `https://www.sajfoods.net/api/event/event.php`
+    *   Blog: `https://www.sajfoods.net/api/event/blog.php`
 
 ## General Requirements
 
 *   **Content-Type**: All API responses must be JSON (`Content-Type: application/json`).
-*   **CORS**: Cross-Origin Resource Sharing (CORS) must be enabled. The provided script allows access from all origins (`*`). For better security, you can replace `*` with your frontend domain.
-*   **HTTP Status Codes**: The script uses appropriate HTTP status codes (e.g., `200 OK`, `201 Created`, `400 Bad Request`, `404 Not Found`, `500 Internal Server Error`).
+*   **CORS**: Cross-Origin Resource Sharing (CORS) must be enabled. The provided scripts allow access from all origins (`*`).
+*   **HTTP Status Codes**: The scripts use appropriate HTTP status codes (e.g., `200 OK`, `201 Created`, `404 Not Found`).
 *   **Response Format**:
     *   **Success**: `{ "success": true, "data": [...] }` or `{ "success": true, "data": {...} }`
     *   **Error**: `{ "success": false, "error": "Error message here" }`
+
+---
 
 ## Database Schema
 
@@ -67,6 +73,8 @@ CREATE TABLE `showcases` (
 
 ### `posts` table
 
+This table is managed by `blog.php`.
+
 ```sql
 CREATE TABLE `posts` (
   `id` varchar(255) NOT NULL,
@@ -86,7 +94,11 @@ CREATE TABLE `posts` (
 
 ---
 
-## Complete PHP Script (`event.php`)
+## Complete Scripts
+
+### `event.php` (For Registrations & Showcases)
+
+This script handles creating, fetching, and updating event-related submissions.
 
 ```php
 <?php
@@ -146,15 +158,6 @@ function jsonBody() {
     return json_decode($input, true);
 }
 
-function generateSlug($title) {
-    $slug = strtolower($title);
-    $slug = preg_replace('/[^a-z0-9\s-]/', '', $slug); // Remove special chars
-    $slug = preg_replace('/[\s-]+/', '-', $slug);      // Replace spaces and hyphens with a single hyphen
-    $slug = trim($slug, '-');                         // Trim hyphens from start/end
-    return $slug;
-}
-
-
 // --- API Routing using GET action parameter ---
 $method = $_SERVER['REQUEST_METHOD'];
 $action = $_GET['action'] ?? '';
@@ -211,7 +214,7 @@ if ($method === 'GET' && $action === 'find_by_id') {
     $id = $_GET['id'] ?? '';
     if (empty($id)) error('No ID provided.', 400);
 
-    foreach (['registrations', 'showcases', 'posts'] as $table) {
+    foreach (['registrations', 'showcases'] as $table) {
         $stmt = $conn->prepare("SELECT * FROM `$table` WHERE id = ?");
         $stmt->bind_param('s', $id);
         $stmt->execute();
@@ -298,6 +301,85 @@ if ($method === 'POST' && $action === 'mark_pending') {
     respond(['updatedCount' => $updated_count, 'requestedIds' => $ids]);
 }
 
+// --- Fallback for Not Found ---
+error('Endpoint action not found or invalid request method.', 404);
+?>
+```
+
+### `blog.php` (For Blog Posts)
+
+This script handles all blog-related actions: creating, fetching all posts, and fetching a single post by its URL slug.
+
+```php
+<?php
+// Enable error logging for debugging
+ini_set('log_errors', 1);
+ini_set('error_log', __DIR__ . '/php-error.log');
+error_reporting(E_ALL & ~E_NOTICE & ~E_STRICT & ~E_DEPRECATED);
+
+// --- Headers ---
+header("Access-Control-Allow-Origin: *"); 
+header("Access-Control-Allow-Methods: GET, POST, OPTIONS");
+header("Access-Control-Allow-Headers: Content-Type");
+header("Content-Type: application/json");
+
+// Handle pre-flight OPTIONS requests from browsers
+if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
+    http_response_code(200);
+    exit;
+}
+
+// --- Database Configuration ---
+$host = "localhost";
+$dbname = "sajfood1_busa-app";
+$username = "sajfood1_busa";
+$password = "Haseem1234@";
+
+// Establish database connection
+try {
+    $conn = new mysqli($host, $username, $password, $dbname);
+    if ($conn->connect_error) {
+        throw new Exception("Database connection failed: " . $conn->connect_error);
+    }
+} catch (Exception $e) {
+    error_log($e->getMessage());
+    http_response_code(503); // Service Unavailable
+    echo json_encode(["success" => false, "error" => "Database service is currently unavailable. Please try again later."]);
+    exit;
+}
+
+// --- Helper Functions ---
+function respond($data) {
+    echo json_encode(['success' => true, 'data' => $data]);
+    exit;
+}
+
+function error($message, $code = 400) {
+    http_response_code($code);
+    echo json_encode(['success' => false, 'error' => $message]);
+    exit;
+}
+
+function jsonBody() {
+    $input = file_get_contents('php://input');
+    if (empty($input)) {
+        return [];
+    }
+    return json_decode($input, true);
+}
+
+function generateSlug($title) {
+    $slug = strtolower($title);
+    $slug = preg_replace('/[^a-z0-9\s-]/', '', $slug); // Remove special chars
+    $slug = preg_replace('/[\s-]+/', '-', $slug);      // Replace spaces and hyphens with a single hyphen
+    $slug = trim($slug, '-');                         // Trim hyphens from start/end
+    return $slug;
+}
+
+// --- API Routing using GET action parameter ---
+$method = $_SERVER['REQUEST_METHOD'];
+$action = $_GET['action'] ?? '';
+
 // --- Blog Post Handlers ---
 
 // Create a new blog post
@@ -363,7 +445,6 @@ if ($method === 'GET' && $action === 'get_post_by_slug') {
         error('Post not found.', 404);
     }
 }
-
 
 // --- Fallback for Not Found ---
 error('Endpoint action not found or invalid request method.', 404);
