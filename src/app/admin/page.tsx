@@ -1,7 +1,8 @@
+
 'use client';
 
 import { useState, useEffect } from 'react';
-import { getRegistrations, getShowcases, markSubmissionsAsPending, updateSubmissionStatus } from '@/app/actions/registration-actions';
+import { getRegistrations, getShowcases, getPosts, markSubmissionsAsPending, updateSubmissionStatus } from '@/app/actions/registration-actions';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -11,8 +12,9 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Toaster } from '@/components/ui/toaster';
 import { useToast } from '@/hooks/use-toast';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Mail, Loader2, CheckCircle, Clock } from 'lucide-react';
+import { Mail, Loader2, CheckCircle, Clock, PlusCircle, Edit, Trash2 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
+import Link from 'next/link';
 
 type Submission = {
   id: string;
@@ -23,6 +25,13 @@ type Submission = {
   [key: string]: any;
 };
 
+type Post = {
+  slug: string;
+  title: string;
+  author: string;
+  date: string;
+};
+
 const ADMIN_PASSWORD = process.env.NEXT_PUBLIC_ADMIN_PASSWORD || 'password';
 
 export default function AdminPage() {
@@ -30,6 +39,7 @@ export default function AdminPage() {
   const [password, setPassword] = useState('');
   const [registrations, setRegistrations] = useState<Submission[]>([]);
   const [showcases, setShowcases] = useState<Submission[]>([]);
+  const [posts, setPosts] = useState<Post[]>([]);
   const [loading, setLoading] = useState(true);
   const [isSending, setIsSending] = useState(false);
   const [confirmingPaymentId, setConfirmingPaymentId] = useState<string | null>(null);
@@ -41,12 +51,13 @@ export default function AdminPage() {
 
   async function loadData() {
     setLoading(true);
-    const [regResult, showcaseResult] = await Promise.all([
+    const [regResult, showcaseResult, postResult] = await Promise.all([
       getRegistrations(),
-      getShowcases()
+      getShowcases(),
+      getPosts(),
     ]);
 
-    if (regResult.success) {
+    if (regResult.success && regResult.data) {
       setRegistrations(regResult.data);
     } else {
       toast({
@@ -56,7 +67,7 @@ export default function AdminPage() {
       });
     }
 
-    if (showcaseResult.success) {
+    if (showcaseResult.success && showcaseResult.data) {
       setShowcases(showcaseResult.data);
     } else {
       toast({
@@ -65,6 +76,17 @@ export default function AdminPage() {
         variant: 'destructive',
       });
     }
+    
+    if (postResult.success && postResult.data) {
+      setPosts(postResult.data);
+    } else {
+       toast({
+        title: 'Error Loading Posts',
+        description: postResult.error,
+        variant: 'destructive',
+      });
+    }
+
     setLoading(false);
   }
 
@@ -168,7 +190,7 @@ export default function AdminPage() {
     }
   }
 
-  const renderTable = (data: Submission[], type: 'registration' | 'showcase') => {
+  const renderSubmissionsTable = (data: Submission[], type: 'registration' | 'showcase') => {
       const mainKeys = type === 'registration' 
         ? ['full_name', 'email'] 
         : ['projectName', 'presenterName', 'presenterEmail'];
@@ -239,6 +261,36 @@ export default function AdminPage() {
       )
   }
 
+  const renderPostsTable = (posts: Post[]) => (
+    <Table>
+      <TableHeader>
+        <TableRow>
+          <TableHead>Title</TableHead>
+          <TableHead>Author</TableHead>
+          <TableHead>Date</TableHead>
+          <TableHead className="text-right">Actions</TableHead>
+        </TableRow>
+      </TableHeader>
+      <TableBody>
+        {posts.map(post => (
+          <TableRow key={post.slug}>
+            <TableCell className="font-medium">{post.title}</TableCell>
+            <TableCell>{post.author}</TableCell>
+            <TableCell>{new Date(post.date).toLocaleDateString()}</TableCell>
+            <TableCell className="text-right">
+              <Button variant="ghost" size="icon" asChild>
+                <Link href={`/blog/${post.slug}`} target="_blank"><Edit className="h-4 w-4" /></Link>
+              </Button>
+              <Button variant="ghost" size="icon" disabled>
+                <Trash2 className="h-4 w-4" />
+              </Button>
+            </TableCell>
+          </TableRow>
+        ))}
+      </TableBody>
+    </Table>
+  );
+
   if (!isAuthenticated) {
     return (
       <>
@@ -273,27 +325,30 @@ export default function AdminPage() {
   return (
     <div className="container mx-auto py-10">
       <div className="flex justify-between items-center mb-6">
-        <h1 className="text-3xl font-bold text-primary">Event Submissions</h1>
-        <Button onClick={handleSendPaymentRequest} disabled={selectedCount === 0 || isSending}>
-            {isSending ? <Loader2 className="animate-spin" /> : <Mail />}
-            Send Payment Request ({selectedCount})
-        </Button>
+        <h1 className="text-3xl font-bold text-primary">Admin Dashboard</h1>
       </div>
       <Tabs defaultValue="registrations">
-        <TabsList className="grid w-full grid-cols-2">
+        <TabsList className="grid w-full grid-cols-3">
           <TabsTrigger value="registrations">Registrations ({registrations.length})</TabsTrigger>
           <TabsTrigger value="showcases">Project Showcases ({showcases.length})</TabsTrigger>
+          <TabsTrigger value="blog">Blog Posts ({posts.length})</TabsTrigger>
         </TabsList>
         <TabsContent value="registrations">
           <Card>
-            <CardContent className="pt-6">
+            <CardHeader>
+                <Button onClick={handleSendPaymentRequest} disabled={selectedCount === 0 || isSending}>
+                    {isSending ? <Loader2 className="animate-spin" /> : <Mail />}
+                    Send Payment Request ({selectedCount})
+                </Button>
+            </CardHeader>
+            <CardContent>
               {loading ? (
                  <div className="space-y-4">
                     <Skeleton className="h-12 w-full" />
                     <Skeleton className="h-12 w-full" />
                  </div>
               ) : registrations.length > 0 ? (
-                renderTable(registrations, 'registration')
+                renderSubmissionsTable(registrations, 'registration')
               ) : (
                 <p className="text-center text-muted-foreground py-8">No registrations yet.</p>
               )}
@@ -309,9 +364,33 @@ export default function AdminPage() {
                   <Skeleton className="h-12 w-full" />
                 </div>
               ) : showcases.length > 0 ? (
-                renderTable(showcases, 'showcase')
+                renderSubmissionsTable(showcases, 'showcase')
               ) : (
                 <p className="text-center text-muted-foreground py-8">No project showcases submitted yet.</p>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+        <TabsContent value="blog">
+          <Card>
+            <CardHeader>
+              <Button asChild>
+                <Link href="/admin/blog/create">
+                  <PlusCircle className="mr-2" />
+                  Create New Post
+                </Link>
+              </Button>
+            </CardHeader>
+            <CardContent>
+              {loading ? (
+                 <div className="space-y-4">
+                    <Skeleton className="h-12 w-full" />
+                    <Skeleton className="h-12 w-full" />
+                 </div>
+              ) : posts.length > 0 ? (
+                renderPostsTable(posts)
+              ) : (
+                <p className="text-center text-muted-foreground py-8">No blog posts yet.</p>
               )}
             </CardContent>
           </Card>

@@ -1,15 +1,14 @@
 
 'use client';
 
-import Image from 'next/image';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { ArrowRight } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { useState, useEffect } from 'react';
+import { Skeleton } from '@/components/ui/skeleton';
 import { getPosts } from '@/app/actions/registration-actions';
-import { Skeleton } from './ui/skeleton';
+import { Logo } from '@/components/logo';
 
 type Post = {
   slug: string;
@@ -22,7 +21,7 @@ type Post = {
   ai_hint: string;
 };
 
-export function BlogSection() {
+export default function BlogListPage() {
   const [posts, setPosts] = useState<Post[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -30,7 +29,7 @@ export function BlogSection() {
     async function loadPosts() {
       const result = await getPosts();
       if (result.success && result.data) {
-        setPosts(result.data.slice(0, 3)); // Only show the 3 most recent posts
+        setPosts(result.data);
       }
       setLoading(false);
     }
@@ -38,21 +37,23 @@ export function BlogSection() {
   }, []);
 
   return (
-    <section className="py-16 md:py-24 bg-[#0A0A0A]">
-      <div className="container mx-auto px-4 md:px-8">
-        <div className="text-center mb-12">
-          <h2 className="text-3xl md:text-4xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-primary to-accent">
-            Latest Insights
-          </h2>
-          <p className="mt-2 text-lg text-gray-400">
+    <main className="min-h-screen bg-background text-foreground">
+      <header className="py-8 bg-muted/30">
+        <div className="container mx-auto text-center">
+            <Link href="/" className="inline-block mb-4">
+              <Logo className="h-20 w-20" />
+            </Link>
+          <h1 className="text-4xl md:text-5xl font-bold text-primary">Latest Insights</h1>
+          <p className="mt-2 text-lg text-muted-foreground">
             News, articles, and updates from the Northern Tech Exchange team.
           </p>
         </div>
-
+      </header>
+      <section className="container mx-auto py-12 px-4 md:px-8">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
           {loading ? (
-            Array.from({ length: 3 }).map((_, i) => (
-              <Card key={i} className="h-full bg-gray-900/50 border-primary/20">
+            Array.from({ length: 6 }).map((_, i) => (
+              <Card key={i} className="bg-card">
                 <CardHeader className="p-0">
                   <Skeleton className="h-48 w-full" />
                 </CardHeader>
@@ -66,7 +67,7 @@ export function BlogSection() {
           ) : (
             posts.map((post) => (
               <Link href={`/blog/${post.slug}`} key={post.slug} className="group block">
-                <Card className="h-full bg-gray-900/50 border-primary/20 hover:border-primary/50 transition-all duration-300 transform hover:-translate-y-2 overflow-hidden">
+                <Card className="h-full bg-card hover:border-primary/50 transition-all duration-300 transform hover:-translate-y-1 overflow-hidden">
                   <CardHeader className="p-0">
                     <div className="relative h-48 w-full">
                       <Image
@@ -84,13 +85,13 @@ export function BlogSection() {
                         <Badge key={tag} variant="secondary" className="text-xs">{tag}</Badge>
                       ))}
                     </div>
-                    <CardTitle className="text-xl font-bold text-gray-100 group-hover:text-primary transition-colors">
+                    <CardTitle className="text-xl font-bold group-hover:text-primary transition-colors">
                       {post.title}
                     </CardTitle>
-                    <CardDescription className="mt-2 text-gray-400 leading-relaxed line-clamp-3">
+                    <CardDescription className="mt-2 text-muted-foreground leading-relaxed line-clamp-3">
                       {post.excerpt}
                     </CardDescription>
-                    <div className="mt-4 flex items-center justify-between text-sm text-gray-500">
+                    <div className="mt-4 flex items-center justify-between text-sm text-muted-foreground">
                       <span>By {post.author}</span>
                       <span>{new Date(post.date).toLocaleDateString()}</span>
                     </div>
@@ -100,15 +101,7 @@ export function BlogSection() {
             ))
           )}
         </div>
-        
-        <div className="text-center mt-12">
-            <Button asChild variant="outline" size="lg" className="border-primary/50 text-gray-300 hover:bg-primary/10 hover:border-primary hover:text-white">
-                <Link href="/blog">
-                    View All Posts <ArrowRight className="ml-2" />
-                </Link>
-            </Button>
-        </div>
-      </div>
-    </section>
+      </section>
+    </main>
   );
 }
