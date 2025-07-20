@@ -5,7 +5,7 @@ import { useForm, SubmitHandler } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useRouter } from 'next/navigation';
-import { useTransition } from 'react';
+import { useState, useTransition } from 'react';
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -14,8 +14,10 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Toaster } from '@/components/ui/toaster';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2 } from 'lucide-react';
+import { Loader2, Sparkles } from 'lucide-react';
 import { createPost } from '@/app/actions/registration-actions';
+import { generateBlogContent } from '@/ai/flows/blog-content-generation';
+
 
 const postSchema = z.object({
   title: z.string().min(5, 'Title must be at least 5 characters.'),
@@ -33,6 +35,7 @@ export default function CreatePostPage() {
   const router = useRouter();
   const { toast } = useToast();
   const [isPending, startTransition] = useTransition();
+  const [isGenerating, setIsGenerating] = useState(false);
 
   const form = useForm<PostFormValues>({
     resolver: zodResolver(postSchema),
@@ -47,9 +50,39 @@ export default function CreatePostPage() {
     },
   });
 
+  const titleValue = form.watch('title');
+
+  const handleGenerateContent = async () => {
+    if (!titleValue || titleValue.length < 5) {
+        toast({ title: 'Title too short', description: 'Please enter a title of at least 5 characters to generate content.', variant: 'destructive'});
+        return;
+    }
+    setIsGenerating(true);
+    try {
+        const result = await generateBlogContent({ title: titleValue });
+        if (result) {
+            form.setValue('excerpt', result.excerpt, { shouldValidate: true });
+            form.setValue('content', result.content, { shouldValidate: true });
+            form.setValue('tags', result.tags, { shouldValidate: true });
+            form.setValue('title', titleValue, { shouldValidate: true }); // AI might slightly change title, so we set it back
+            toast({ title: 'Content Generated!', description: 'The AI has populated the fields below.' });
+        }
+    } catch (error: any) {
+         toast({ title: 'Error Generating Content', description: error.message || 'An unknown error occurred.', variant: 'destructive'});
+    } finally {
+        setIsGenerating(false);
+    }
+  }
+
   const onSubmit: SubmitHandler<PostFormValues> = (values) => {
     startTransition(async () => {
-      const result = await createPost(values);
+      // Ensure the generated content includes the h1 tag if it doesn't exist
+      let finalContent = values.content;
+      if (!/<h1.*>.*<\/h1>/.test(finalContent)) {
+          finalContent = `<h1>${values.title}</h1>${finalContent}`;
+      }
+
+      const result = await createPost({...values, content: finalContent});
       if (result.success) {
         toast({ title: 'Post Created!', description: 'Your new blog post has been saved.' });
         form.reset();
@@ -65,7 +98,7 @@ export default function CreatePostPage() {
       <Card className="w-full max-w-3xl">
         <CardHeader>
           <CardTitle>Create New Blog Post</CardTitle>
-          <CardDescription>Fill in the details below to publish a new article.</CardDescription>
+          <CardDescription>Fill in the details below to publish a new article. You can use AI to help draft your content.</CardDescription>
         </CardHeader>
         <CardContent>
           <Form {...form}>
@@ -76,7 +109,13 @@ export default function CreatePostPage() {
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Post Title</FormLabel>
-                    <FormControl><Input placeholder="Your amazing blog post title" {...field} /></FormControl>
+                    <div className="flex gap-2">
+                        <FormControl><Input placeholder="Your amazing blog post title" {...field} /></FormControl>
+                        <Button type="button" onClick={handleGenerateContent} disabled={isGenerating}>
+                            {isGenerating ? <Loader2 className="animate-spin" /> : <Sparkles />}
+                            Generate
+                        </Button>
+                    </div>
                     <FormMessage />
                   </FormItem>
                 )}
