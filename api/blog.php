@@ -1,3 +1,4 @@
+
 <?php
 // Enable error logging for debugging
 ini_set('log_errors', 1);
@@ -204,7 +205,8 @@ if ($method === 'GET' && $action === 'get_comments_for_post') {
 // --- View Count Handler ---
 
 if ($method === 'POST' && $action === 'increment_view_count') {
-    $post_id = $_POST['post_id'] ?? '';
+    $body = jsonBody();
+    $post_id = $body['post_id'] ?? '';
     if (empty($post_id)) error('No post_id provided.', 400);
 
     $sql = "INSERT INTO post_views (post_id, view_count) VALUES (?, 1) ON DUPLICATE KEY UPDATE view_count = view_count + 1";

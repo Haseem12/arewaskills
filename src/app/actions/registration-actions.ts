@@ -203,20 +203,19 @@ export async function deletePost(id: string) {
 export async function incrementViewCount(postId: string) {
   try {
     const params = new URLSearchParams({ action: 'increment_view_count' });
-    // Using FormData to send as x-www-form-urlencoded
-    const body = new URLSearchParams();
-    body.append('post_id', postId);
+    const body = { post_id: postId };
 
-    const url = `${BLOG_API_URL}?${params.toString()}`;
-    await fetch(url, {
+    // This is a "fire-and-forget" request. We don't need the response data.
+    // We are not using apiFetch because it expects a `data` field in the response,
+    // which this endpoint doesn't necessarily have.
+    await fetch(`${BLOG_API_URL}?${params.toString()}`, {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/x-www-form-urlencoded',
+        'Content-Type': 'application/json',
       },
-      body: body.toString(),
+      body: JSON.stringify(body),
       cache: 'no-store',
     });
-    // Fire-and-forget, no need to wait for response or handle errors on client
     return { success: true };
   } catch (error) {
     // Log error but don't block user
