@@ -14,12 +14,15 @@ async function apiFetch(baseUrl: string, params: URLSearchParams, options: Reque
     });
 
     if (!response.ok) {
+      let errorMessage = `HTTP error! status: ${response.status}`;
       try {
         const errorBody = await response.json();
-        throw new Error(errorBody.error || `HTTP error! status: ${response.status}`);
-      } catch (e: any) {
-         throw new Error(e.message || response.statusText);
+        errorMessage = errorBody.error || errorMessage;
+      } catch (e) {
+        // If response is not JSON, use the status text.
+        errorMessage = response.statusText || errorMessage;
       }
+      throw new Error(errorMessage);
     }
 
     const result = await response.json();
