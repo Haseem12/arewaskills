@@ -83,7 +83,7 @@ export default function BlogListPage() {
                   </CardHeader>
                   <CardContent className="p-6">
                     <div className="flex gap-2 mb-2">
-                      {post.tags.map((tag) => (
+                      {post.tags && post.tags.map((tag) => (
                         <Badge key={tag} variant="secondary" className="text-xs">{tag}</Badge>
                       ))}
                     </div>

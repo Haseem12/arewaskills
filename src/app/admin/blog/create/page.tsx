@@ -53,6 +53,7 @@ export default function CreatePostPage() {
       if (result.success) {
         toast({ title: 'Post Created!', description: 'Your new blog post has been saved.' });
         form.reset();
+        // No redirect, user can create another post or navigate away manually.
       } else {
         toast({ title: 'Error', description: result.error, variant: 'destructive' });
       }

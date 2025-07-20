@@ -34,7 +34,8 @@ type Post = {
 
 type Comment = {
   id: string;
-  author_name: string;
+  postId: string;
+  authorName: string;
   comment: string;
   submittedAt: string;
 };
@@ -67,7 +68,7 @@ function CommentSection({ postId }: { postId: string }) {
 
     startTransition(async () => {
       const result = await createComment({ postId, authorName, comment: commentText });
-      if (result.success) {
+      if (result.success && result.data) {
         setComments(prev => [result.data, ...prev]);
         setAuthorName('');
         setCommentText('');
@@ -117,7 +118,7 @@ function CommentSection({ postId }: { postId: string }) {
                   </div>
                   <div className="w-full">
                     <div className="flex justify-between items-center">
-                      <p className="font-bold">{comment.author_name}</p>
+                      <p className="font-bold">{comment.authorName}</p>
                       <p className="text-xs text-muted-foreground">{new Date(comment.submittedAt).toLocaleString()}</p>
                     </div>
                     <p className="text-muted-foreground mt-1">{comment.comment}</p>
@@ -148,7 +149,9 @@ export default function BlogPostPage({ params }: { params: { slug:string } }) {
         if (result.success && result.data) {
           setPost(result.data);
           // Fire-and-forget view count increment
-          incrementViewCount(result.data.id);
+          await incrementViewCount(result.data.id);
+          // Manually update view count on client to avoid re-fetching
+          setPost(p => p ? {...p, view_count: (p.view_count || 0) + 1} : null);
         } else {
           notFound();
         }
@@ -194,7 +197,7 @@ export default function BlogPostPage({ params }: { params: { slug:string } }) {
         <div className="absolute bottom-0 left-0 right-0">
           <div className="container mx-auto max-w-4xl p-8 text-white">
             <div className="flex gap-2 mb-4">
-                {post.tags.map(tag => (
+                {post.tags && post.tags.map(tag => (
                     <Badge key={tag} variant="secondary">{tag}</Badge>
                 ))}
             </div>

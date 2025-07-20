@@ -12,7 +12,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Toaster } from '@/components/ui/toaster';
 import { useToast } from '@/hooks/use-toast';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Mail, Loader2, CheckCircle, Clock, PlusCircle, Edit, Trash2, Eye } from 'lucide-react';
+import { Mail, Loader2, CheckCircle, Clock, PlusCircle, Trash2, Eye } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import Link from 'next/link';
 import {

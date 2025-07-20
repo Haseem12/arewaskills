@@ -1,0 +1,29 @@
+
+[
+  {
+    "id": "1752573310675",
+    "slug": "getting-started-with-ai",
+    "title": "Getting Started with AI in Web Development",
+    "excerpt": "Learn how to integrate the power of Generative AI into your modern web applications with this introductory guide.",
+    "content": "<h1>The Rise of AI in Web Development</h1><p>Artificial Intelligence is no longer a futuristic concept; it's here, and it's transforming web development. From generating code to creating dynamic user experiences, AI is a powerful tool in any developer's arsenal.</p><p>This post will walk you through the basics of using Genkit to add AI-powered features to a Next.js application. We'll cover setting up your environment, creating your first AI flow, and calling it from a React component.</p><h2>What is Genkit?</h2><p>Genkit is a powerful framework for building AI-powered applications. It provides a simple and consistent way to interact with various large language models (LLMs) and other AI tools.</p>",
+    "author": "Admin",
+    "date": "2025-07-20T10:00:00Z",
+    "image": "https://placehold.co/1200x600.png",
+    "ai_hint": "artificial intelligence technology",
+    "tags": "AI, Web Dev, Genkit",
+    "view_count": 120
+  },
+  {
+    "id": "1752574409156",
+    "slug": "mastering-tailwind-css",
+    "title": "Mastering Tailwind CSS for Modern UIs",
+    "excerpt": "A deep dive into the utility-first CSS framework that's taking the web by storm. Learn tips and tricks for building beautiful, responsive interfaces.",
+    "content": "<h1>Why Tailwind CSS?</h1><p>Tailwind CSS provides low-level utility classes that let you build completely custom designs without ever leaving your HTML. It's a different approach compared to component-based frameworks like Bootstrap, but it offers unparalleled flexibility and control.</p><h2>Best Practices</h2><p>In this article, we explore best practices for organizing your Tailwind projects, creating reusable components with `@apply`, and configuring your `tailwind.config.ts` for maximum efficiency.</p>",
+    "author": "Admin",
+    "date": "2025-07-18T14:30:00Z",
+    "image": "https://placehold.co/1200x600.png",
+    "ai_hint": "modern user interface",
+    "tags": "CSS, Tailwind, Frontend",
+    "view_count": 350
+  }
+]
