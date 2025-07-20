@@ -1,7 +1,7 @@
 
 'use client';
 
-import { Suspense, useEffect, useState } from 'react';
+import { Suspense, useEffect, useState, useRef, useCallback } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { findSubmissionById } from '@/app/actions/registration-actions';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -10,7 +10,8 @@ import { Button } from '@/components/ui/button';
 import { Logo } from '@/components/logo';
 import { Separator } from '@/components/ui/separator';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Printer, TicketIcon, AlertTriangle, Loader2, MapPin, CalendarDays, Clock, UserCheck } from 'lucide-react';
+import { Download, TicketIcon, AlertTriangle, Loader2, MapPin, CalendarDays, Clock, UserCheck } from 'lucide-react';
+import { toPng } from 'html-to-image';
 
 type Submission = {
   id: string;
@@ -25,6 +26,7 @@ function TicketContent() {
   const [submission, setSubmission] = useState<Submission | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const ticketRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (!id) {
@@ -55,9 +57,23 @@ function TicketContent() {
     fetchSubmission();
   }, [id]);
 
-  const handlePrint = () => {
-    window.print();
-  };
+  const handleDownload = useCallback(() => {
+    if (ticketRef.current === null) {
+      return;
+    }
+
+    toPng(ticketRef.current, { cacheBust: true })
+      .then((dataUrl) => {
+        const link = document.createElement('a');
+        link.download = `northern-tech-exchange-ticket-${submission?.id}.png`;
+        link.href = dataUrl;
+        link.click();
+      })
+      .catch((err) => {
+        console.error('oops, something went wrong!', err);
+        setError('Could not generate ticket image. Please try again.');
+      });
+  }, [submission]);
   
   if (loading) {
     return (
@@ -90,29 +106,15 @@ function TicketContent() {
   }
 
   if (!submission) {
-    return null; // Keep this to handle the case where submission is null after loading and no error
+    return null; 
   }
   
   const attendeeName = submission.type === 'registration' ? submission.full_name : submission.presenterName;
   const attendeeEmail = submission.type === 'registration' ? submission.email : submission.presenterEmail;
 
   return (
-    <div className="w-full max-w-lg mx-auto p-4 print:p-0">
-        <style jsx global>{`
-            @media print {
-                body {
-                    background-color: #fff;
-                }
-                .no-print {
-                    display: none;
-                }
-                .ticket-card {
-                    box-shadow: none !important;
-                    border: 2px solid #000 !important;
-                }
-            }
-        `}</style>
-        <Card className="ticket-card bg-card text-card-foreground shadow-2xl rounded-2xl overflow-hidden">
+    <div className="w-full max-w-lg mx-auto p-4">
+        <Card ref={ticketRef} className="ticket-card bg-card text-card-foreground shadow-2xl rounded-2xl overflow-hidden">
             <CardHeader className="bg-primary text-primary-foreground p-6">
                 <div className="flex items-center justify-between">
                     <div>
@@ -190,10 +192,10 @@ function TicketContent() {
                  <p className="text-sm text-muted-foreground">This ticket grants entry for one person. We look forward to seeing you!</p>
             </CardFooter>
         </Card>
-        <div className="mt-8 text-center no-print">
-            <Button size="lg" onClick={handlePrint}>
-                <Printer className="mr-2" />
-                Print Ticket
+        <div className="mt-8 text-center">
+            <Button size="lg" onClick={handleDownload}>
+                <Download className="mr-2" />
+                Download Ticket
             </Button>
         </div>
     </div>
