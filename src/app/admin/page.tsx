@@ -42,7 +42,6 @@ type Post = {
   title: string;
   author: string;
   date: string;
-  view_count: number;
 };
 
 const ADMIN_PASSWORD = process.env.NEXT_PUBLIC_ADMIN_PASSWORD || 'password';
@@ -292,7 +291,6 @@ export default function AdminPage() {
           <TableHead>Title</TableHead>
           <TableHead>Author</TableHead>
           <TableHead>Date</TableHead>
-          <TableHead>Views</TableHead>
           <TableHead className="text-right">Actions</TableHead>
         </TableRow>
       </TableHeader>
@@ -302,7 +300,6 @@ export default function AdminPage() {
             <TableCell className="font-medium">{post.title}</TableCell>
             <TableCell>{post.author}</TableCell>
             <TableCell>{new Date(post.date).toLocaleDateString()}</TableCell>
-            <TableCell>{post.view_count || 0}</TableCell>
             <TableCell className="text-right">
               <Button variant="ghost" size="icon" asChild>
                 <Link href={`/blog/${post.slug}`} target="_blank"><Eye className="h-4 w-4" /></Link>
