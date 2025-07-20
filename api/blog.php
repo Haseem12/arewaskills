@@ -1,4 +1,3 @@
-
 <?php
 // Enable error logging for debugging
 ini_set('log_errors', 1);
