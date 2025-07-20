@@ -205,7 +205,7 @@ function PaymentFlow() {
     <Card className="w-full max-w-md">
       <CardHeader>
         <CardTitle>Choose Payment Method</CardTitle>
-        <CardDescription>Select how you'd like to pay the N5,000.00 registration fee.</CardDescription>
+        <CardDescription>Select how you'd like to pay the N3,000.00 registration fee.</CardDescription>
       </CardHeader>
       <CardContent>
         <Form {...methodForm}>
@@ -276,7 +276,7 @@ function PaymentFlow() {
                         <span className="text-muted-foreground">Account Name:</span> <span>Northern Tech Exchange</span>
                         <span className="text-muted-foreground">Account Number:</span> <span>1234567890</span>
                         <span className="text-muted-foreground">Bank:</span> <span>Tech Bank Plc</span>
-                        <span className="text-muted-foreground">Amount:</span> <span className="font-bold">N5,000.00</span>
+                        <span className="text-muted-foreground">Amount:</span> <span className="font-bold">N3,000.00</span>
                         <span className="text-muted-foreground">Reference:</span> <span>{name}</span>
                     </div>
                 </div>

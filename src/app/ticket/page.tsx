@@ -10,7 +10,7 @@ import { Button } from '@/components/ui/button';
 import { Logo } from '@/components/logo';
 import { Separator } from '@/components/ui/separator';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Printer, TicketIcon, AlertTriangle, Loader2, MapPin, CalendarDays, Clock } from 'lucide-react';
+import { Printer, TicketIcon, AlertTriangle, Loader2, MapPin, CalendarDays, Clock, UserCheck } from 'lucide-react';
 
 type Submission = {
   id: string;
@@ -172,6 +172,15 @@ function TicketContent() {
                         <div>
                             <p className="font-semibold">Time</p>
                             <p className="text-muted-foreground">Afternoon 1:00 PM – 2:00 PM</p>
+                        </div>
+                    </div>
+                    <div className="flex items-start gap-3">
+                        <UserCheck className="h-5 w-5 text-muted-foreground mt-1 flex-shrink-0" />
+                        <div>
+                            <p className="font-semibold">Special Guests</p>
+                            <p className="text-muted-foreground">Prof. Isah Ali Ibrahim Pantami</p>
+                            <p className="text-muted-foreground">Mal. Uba Sani (Kaduna State Governor)</p>
+                            <p className="text-muted-foreground">HRH Alh. Ahmed Nuhu Bamalli</p>
                         </div>
                     </div>
                 </div>
