@@ -44,7 +44,7 @@ type Post = {
   date: string;
 };
 
-const ADMIN_PASSWORD = process.env.NEXT_PUBLIC_ADMIN_PASSWORD || 'password';
+const ADMIN_PASSWORD = process.env.NEXT_PUBLIC_ADMIN_PASSWORD || '251436';
 
 export default function AdminPage() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -314,7 +314,7 @@ export default function AdminPage() {
                     <AlertDialogHeader>
                     <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
                     <AlertDialogDescription>
-                        This action cannot be undone. This will permanently delete the post and all its comments.
+                        This action cannot be undone. This will permanently delete the post.
                     </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
