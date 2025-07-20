@@ -2,7 +2,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { getRegistrations, getShowcases, getPosts, markSubmissionsAsPending, updateSubmissionStatus } from '@/app/actions/registration-actions';
+import { getRegistrations, getShowcases, getPosts, markSubmissionsAsPending, updateSubmissionStatus, deletePost } from '@/app/actions/registration-actions';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -12,9 +12,20 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Toaster } from '@/components/ui/toaster';
 import { useToast } from '@/hooks/use-toast';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Mail, Loader2, CheckCircle, Clock, PlusCircle, Edit, Trash2 } from 'lucide-react';
+import { Mail, Loader2, CheckCircle, Clock, PlusCircle, Edit, Trash2, Eye } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import Link from 'next/link';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog"
 
 type Submission = {
   id: string;
@@ -26,10 +37,12 @@ type Submission = {
 };
 
 type Post = {
+  id: string;
   slug: string;
   title: string;
   author: string;
   date: string;
+  view_count: number;
 };
 
 const ADMIN_PASSWORD = process.env.NEXT_PUBLIC_ADMIN_PASSWORD || 'password';
@@ -150,6 +163,17 @@ export default function AdminPage() {
     setConfirmingPaymentId(null);
   }
 
+  const handleDeletePost = async (id: string) => {
+    const result = await deletePost(id);
+    if (result.success) {
+      toast({ title: 'Post Deleted', description: 'The post has been successfully removed.' });
+      setPosts(prev => prev.filter(p => p.id !== id));
+    } else {
+      toast({ title: 'Error', description: result.error, variant: 'destructive' });
+    }
+  };
+
+
   const handleSelect = (id: string, type: 'registration' | 'showcase') => {
       const stateUpdater = type === 'registration' ? setSelectedRegistrations : setSelectedShowcases;
       stateUpdater(prev => {
@@ -268,6 +292,7 @@ export default function AdminPage() {
           <TableHead>Title</TableHead>
           <TableHead>Author</TableHead>
           <TableHead>Date</TableHead>
+          <TableHead>Views</TableHead>
           <TableHead className="text-right">Actions</TableHead>
         </TableRow>
       </TableHeader>
@@ -277,13 +302,30 @@ export default function AdminPage() {
             <TableCell className="font-medium">{post.title}</TableCell>
             <TableCell>{post.author}</TableCell>
             <TableCell>{new Date(post.date).toLocaleDateString()}</TableCell>
+            <TableCell>{post.view_count || 0}</TableCell>
             <TableCell className="text-right">
               <Button variant="ghost" size="icon" asChild>
-                <Link href={`/blog/${post.slug}`} target="_blank"><Edit className="h-4 w-4" /></Link>
+                <Link href={`/blog/${post.slug}`} target="_blank"><Eye className="h-4 w-4" /></Link>
               </Button>
-              <Button variant="ghost" size="icon" disabled>
-                <Trash2 className="h-4 w-4" />
-              </Button>
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                    <Button variant="ghost" size="icon">
+                        <Trash2 className="h-4 w-4 text-destructive" />
+                    </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                    <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                        This action cannot be undone. This will permanently delete the post and all its comments.
+                    </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                    <AlertDialogAction onClick={() => handleDeletePost(post.id)} className="bg-destructive hover:bg-destructive/90">Delete</AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+                </AlertDialog>
             </TableCell>
           </TableRow>
         ))}

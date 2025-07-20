@@ -185,3 +185,71 @@ export async function getPostBySlug(slug: string) {
     return { success: false, data: null, error: 'Post not found.' };
   }
 }
+
+export async function deletePost(id: string) {
+  try {
+    const params = new URLSearchParams({ action: 'delete_post' });
+    const data = await apiFetch(BLOG_API_URL, params, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id }),
+    });
+    return { success: true, data, error: null };
+  } catch (error: any) {
+    return { success: false, data: null, error: error.message };
+  }
+}
+
+export async function incrementViewCount(postId: string) {
+  try {
+    const params = new URLSearchParams({ action: 'increment_view_count' });
+    // Using FormData to send as x-www-form-urlencoded
+    const body = new URLSearchParams();
+    body.append('post_id', postId);
+
+    const url = `${BLOG_API_URL}?${params.toString()}`;
+    await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+      },
+      body: body.toString(),
+      cache: 'no-store',
+    });
+    // Fire-and-forget, no need to wait for response or handle errors on client
+    return { success: true };
+  } catch (error) {
+    // Log error but don't block user
+    console.error('Failed to increment view count:', error);
+    return { success: false };
+  }
+}
+
+export async function getComments(postId: string) {
+  try {
+    const params = new URLSearchParams({ action: 'get_comments_for_post', post_id: postId });
+    const data = await apiFetch(BLOG_API_URL, params);
+    return { success: true, data, error: null };
+  } catch (error: any) {
+    return { success: false, data: [], error: error.message };
+  }
+}
+
+export async function createComment(commentData: { postId: string; authorName: string; comment: string }) {
+  try {
+    const params = new URLSearchParams({ action: 'create_comment' });
+    const body = {
+        post_id: commentData.postId,
+        author_name: commentData.authorName,
+        comment: commentData.comment
+    };
+    const data = await apiFetch(BLOG_API_URL, params, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+    });
+    return { success: true, data, error: null };
+  } catch (error: any) {
+    return { success: false, data: null, error: error.message };
+  }
+}
