@@ -9,6 +9,7 @@ import { AdSlot } from '@/components/ad-slot';
 import { Toaster } from '@/components/ui/toaster';
 import { MainNav } from '@/components/main-nav';
 import { Calendar, User } from 'lucide-react';
+import { AskArticle } from './ask-article';
 
 type Post = {
   id: string;
@@ -67,6 +68,8 @@ export function BlogPost({ post }: { post: Post }) {
             dangerouslySetInnerHTML={{ __html: post.content }}
           />
 
+          <AskArticle postContent={post.content} />
+          
           <div className="my-12">
             <AdSlot />
           </div>
