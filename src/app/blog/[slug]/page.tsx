@@ -138,12 +138,13 @@ function CommentSection({ postId }: { postId: string }) {
 export default function BlogPostPage({ params }: { params: { slug:string } }) {
   const [post, setPost] = useState<Post | null>(null);
   const [loading, setLoading] = useState(true);
+  const { slug } = params;
 
   useEffect(() => {
-    if (params.slug) {
+    if (slug) {
       async function loadPost() {
         setLoading(true);
-        const result = await getPostBySlug(params.slug);
+        const result = await getPostBySlug(slug);
         if (result.success && result.data) {
           setPost(result.data);
           // Fire-and-forget view count increment
@@ -155,7 +156,7 @@ export default function BlogPostPage({ params }: { params: { slug:string } }) {
       }
       loadPost();
     }
-  }, [params.slug]);
+  }, [slug]);
 
   if (loading) {
     return (
