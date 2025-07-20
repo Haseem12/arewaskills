@@ -52,8 +52,7 @@ export default function CreatePostPage() {
       const result = await createPost(values);
       if (result.success) {
         toast({ title: 'Post Created!', description: 'Your new blog post has been saved.' });
-        router.push('/admin');
-        router.refresh();
+        form.reset();
       } else {
         toast({ title: 'Error', description: result.error, variant: 'destructive' });
       }
