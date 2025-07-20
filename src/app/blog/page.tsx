@@ -9,6 +9,7 @@ import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { getPosts } from '@/app/actions/registration-actions';
 import { Logo } from '@/components/logo';
+import { MainNav } from '@/components/main-nav';
 
 type Post = {
   slug: string;
@@ -38,6 +39,7 @@ export default function BlogListPage() {
 
   return (
     <main className="min-h-screen bg-background text-foreground">
+       <MainNav />
       <header className="py-8 bg-muted/30">
         <div className="container mx-auto text-center">
             <Link href="/" className="inline-block mb-4">
@@ -45,7 +47,7 @@ export default function BlogListPage() {
             </Link>
           <h1 className="text-4xl md:text-5xl font-bold text-primary">Latest Insights</h1>
           <p className="mt-2 text-lg text-muted-foreground">
-            News, articles, and updates from the Northern Tech Exchange team.
+            News, articles, and updates from the Skill Arewa team.
           </p>
         </div>
       </header>

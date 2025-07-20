@@ -45,7 +45,7 @@ export function BlogSection() {
             Latest Insights
           </h2>
           <p className="mt-2 text-lg text-gray-400">
-            News, articles, and updates from the Northern Tech Exchange team.
+            News, articles, and updates from the Skill Arewa team.
           </p>
         </div>
 

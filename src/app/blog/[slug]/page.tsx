@@ -16,6 +16,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import { Toaster } from '@/components/ui/toaster';
+import { MainNav } from '@/components/main-nav';
 
 type Post = {
   id: string;
@@ -159,7 +160,8 @@ export default function BlogPostPage({ params }: { params: { slug:string } }) {
   if (loading) {
     return (
       <div className="container mx-auto max-w-4xl py-12">
-        <Skeleton className="h-10 w-3/4 mb-4" />
+        <MainNav />
+        <Skeleton className="h-10 w-3/4 mb-4 mt-8" />
         <Skeleton className="h-6 w-1/2 mb-8" />
         <Skeleton className="aspect-video w-full mb-8" />
         <div className="space-y-4">
@@ -178,6 +180,7 @@ export default function BlogPostPage({ params }: { params: { slug:string } }) {
   return (
     <>
     <article className="bg-background text-foreground">
+      <MainNav />
       <header className="relative h-96">
         <Image
           src={post.image || 'https://placehold.co/1200x600.png'}

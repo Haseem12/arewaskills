@@ -1,3 +1,4 @@
+
 import type { SVGProps } from 'react';
 
 export function Logo(props: SVGProps<SVGSVGElement>) {
@@ -7,7 +8,7 @@ export function Logo(props: SVGProps<SVGSVGElement>) {
       viewBox="0 0 100 100"
       width="100"
       height="100"
-      aria-label="Northern Tech Exchange Logo"
+      aria-label="Skill Arewa Logo"
       {...props}
     >
       <style>

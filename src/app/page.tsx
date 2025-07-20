@@ -20,7 +20,7 @@ export default function Home() {
               <div className="max-w-xl">
                   <Logo className="h-24 w-24 mb-6" />
                   <h1 className="text-4xl md:text-6xl font-headline font-bold text-transparent bg-clip-text bg-gradient-to-r from-primary to-accent">
-                      Northern Tech Exchange
+                      Skill Arewa
                   </h1>
                   <p className="mt-4 max-w-2xl text-lg md:text-xl text-gray-400">
                       Empowering Northern Nigeria with transformative skills in Technology, Development, and Artificial Intelligence. We are building the future, one skill at a time.
@@ -58,7 +58,7 @@ export default function Home() {
         <BlogSection />
 
         <footer className="text-center p-8 md:p-16 text-gray-500">
-          <p>&copy; {new Date().getFullYear()} Northern Tech Exchange. All Rights Reserved.</p>
+          <p>&copy; {new Date().getFullYear()} Skill Arewa. All Rights Reserved.</p>
         </footer>
       </div>
     </main>
