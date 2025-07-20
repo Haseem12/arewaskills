@@ -10,6 +10,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Calendar, User } from 'lucide-react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
+import { AdSlot } from '@/components/ad-slot';
 
 type Post = {
   slug: string;
@@ -23,7 +24,7 @@ type Post = {
   ai_hint: string;
 };
 
-export default function BlogPostPage({ params }: { params: { slug: string } }) {
+export default function BlogPostPage({ params }: { params: { slug:string } }) {
   const [post, setPost] = useState<Post | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -100,6 +101,8 @@ export default function BlogPostPage({ params }: { params: { slug: string } }) {
         <div className="prose prose-invert prose-lg max-w-none prose-headings:text-primary prose-a:text-accent prose-strong:text-foreground">
           <div dangerouslySetInnerHTML={{ __html: post.content }} />
         </div>
+
+        <AdSlot className="my-12" />
         
         <div className="mt-12 border-t border-border pt-8 text-center">
             <Button asChild>
