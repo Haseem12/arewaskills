@@ -27,7 +27,7 @@ export default function BooksPage() {
       const data: Book[] = [
         {
           title: 'UI Flow',
-          description: 'A Complete UI/UX Design Guide — Go-to Toolkit with 80 Prompts for Every Stage of Your Design Journey.',
+          description: 'A Complete UI/UX Design Guide — Go-to Toolkit with 200 Prompts for Every Stage of Your Design Journey.',
           file: '/docs/UI Flow.pdf',
           tags: ['Design', 'UX'],
           author: 'Skill Arewa',
