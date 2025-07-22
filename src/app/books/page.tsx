@@ -21,9 +21,13 @@ export default function BooksPage() {
   const [books, setBooks] = useState<Book[]>([]);
   const [loading, setLoading] = useState(true);
 
+  const [selectedBook, setSelectedBook] = useState<Book | null>(null);
+  const [formData, setFormData] = useState({ name: '', email: '' });
+  const [showForm, setShowForm] = useState(false);
+  const [error, setError] = useState('');
+
   useEffect(() => {
     async function fetchBooks() {
-      // Replace this with dynamic fetch if needed
       const data: Book[] = [
         {
           title: 'UI Flow',
@@ -40,6 +44,57 @@ export default function BooksPage() {
 
     fetchBooks();
   }, []);
+
+  function handleDownloadClick(book: Book) {
+    setSelectedBook(book);
+    setShowForm(true);
+  }
+
+  function handleInputChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const { name, value } = e.target;
+    setFormData({ ...formData, [name]: value });
+  }
+
+  async function handleFormSubmit(e: React.FormEvent) {
+    e.preventDefault();
+
+    if (!formData.name || !formData.email) {
+      setError('Please enter your name and email.');
+      return;
+    }
+
+    try {
+      const response = await fetch('https://sajfoods.net/api/event/article.php', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: formData.name,
+          email: formData.email,
+          book: selectedBook?.title || 'Unknown',
+        }),
+      });
+
+      const result = await response.json();
+
+      if (result.status !== 'success') {
+        setError('Failed to save your data. Please try again.');
+        return;
+      }
+
+      // Proceed to download
+      if (selectedBook) {
+        window.open(selectedBook.file, '_blank');
+      }
+
+      setFormData({ name: '', email: '' });
+      setShowForm(false);
+      setSelectedBook(null);
+      setError('');
+    } catch (err) {
+      console.error(err);
+      setError('Something went wrong. Please try again.');
+    }
+  }
 
   return (
     <main className="min-h-screen bg-background text-foreground">
@@ -73,12 +128,10 @@ export default function BooksPage() {
             ))
           ) : (
             books.map((book, index) => (
-              <Link
-                href={book.file}
-                target="_blank"
-                rel="noopener noreferrer"
+              <div
                 key={index}
-                className="group block"
+                className="group block cursor-pointer"
+                onClick={() => handleDownloadClick(book)}
               >
                 <Card className="h-full bg-card hover:border-primary/50 transition-all duration-300 transform hover:-translate-y-1 overflow-hidden">
                   <CardHeader className="p-0">
@@ -88,8 +141,10 @@ export default function BooksPage() {
                   </CardHeader>
                   <CardContent className="p-6">
                     <div className="flex gap-2 mb-2">
-                      {book.tags && book.tags.map((tag) => (
-                        <Badge key={tag} variant="secondary" className="text-xs">{tag}</Badge>
+                      {book.tags?.map((tag) => (
+                        <Badge key={tag} variant="secondary" className="text-xs">
+                          {tag}
+                        </Badge>
                       ))}
                     </div>
                     <CardTitle className="text-xl font-bold group-hover:text-primary transition-colors">
@@ -104,11 +159,57 @@ export default function BooksPage() {
                     </div>
                   </CardContent>
                 </Card>
-              </Link>
+              </div>
             ))
           )}
         </div>
       </section>
+
+      {showForm && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-white p-6 rounded-lg max-w-md w-full shadow-lg space-y-4">
+            <h2 className="text-xl font-semibold text-center">Access this Book</h2>
+            <p className="text-sm text-muted-foreground text-center">
+              Please enter your details to proceed with the download.
+            </p>
+
+            <form onSubmit={handleFormSubmit} className="space-y-4">
+              <input
+                type="text"
+                name="name"
+                placeholder="Your Name"
+                value={formData.name}
+                onChange={handleInputChange}
+                className="w-full border px-3 py-2 rounded"
+              />
+              <input
+                type="email"
+                name="email"
+                placeholder="Your Email"
+                value={formData.email}
+                onChange={handleInputChange}
+                className="w-full border px-3 py-2 rounded"
+              />
+              {error && <p className="text-red-500 text-sm">{error}</p>}
+              <div className="flex justify-between items-center">
+                <button
+                  type="submit"
+                  className="bg-primary text-white px-4 py-2 rounded hover:bg-primary/90"
+                >
+                  Download
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setShowForm(false)}
+                  className="text-sm text-muted-foreground hover:underline"
+                >
+                  Cancel
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </main>
   );
 }
