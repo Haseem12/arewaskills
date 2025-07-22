@@ -165,51 +165,54 @@ export default function BooksPage() {
         </div>
       </section>
 
-      {showForm && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-white p-6 rounded-lg max-w-md w-full shadow-lg space-y-4">
-            <h2 className="text-xl font-semibold text-center">Access this Book</h2>
-            <p className="text-sm text-muted-foreground text-center">
-              Please enter your details to proceed with the download.
-            </p>
+    {showForm && (
+  <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50">
+    <div className="bg-black border border-[#00ffff] rounded-xl shadow-[0_0_20px_#00ffff] p-6 w-full max-w-md space-y-5 text-white">
+      <h2 className="text-2xl font-bold text-center text-[#00ffff]">Get the Book</h2>
+      <p className="text-sm text-center text-gray-300">
+        Enter your details to access <strong>{selectedBook?.title}</strong>.
+      </p>
 
-            <form onSubmit={handleFormSubmit} className="space-y-4">
-              <input
-                type="text"
-                name="name"
-                placeholder="Your Name"
-                value={formData.name}
-                onChange={handleInputChange}
-                className="w-full border px-3 py-2 rounded"
-              />
-              <input
-                type="email"
-                name="email"
-                placeholder="Your Email"
-                value={formData.email}
-                onChange={handleInputChange}
-                className="w-full border px-3 py-2 rounded"
-              />
-              {error && <p className="text-red-500 text-sm">{error}</p>}
-              <div className="flex justify-between items-center">
-                <button
-                  type="submit"
-                  className="bg-primary text-white px-4 py-2 rounded hover:bg-primary/90"
-                >
-                  Download
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setShowForm(false)}
-                  className="text-sm text-muted-foreground hover:underline"
-                >
-                  Cancel
-                </button>
-              </div>
-            </form>
-          </div>
+      <form onSubmit={handleFormSubmit} className="space-y-4">
+        <input
+          type="text"
+          name="name"
+          placeholder="Your Name"
+          value={formData.name}
+          onChange={handleInputChange}
+          className="w-full bg-[#111] text-white border border-[#00ffff] px-4 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#00ffff]"
+        />
+        <input
+          type="email"
+          name="email"
+          placeholder="Your Email"
+          value={formData.email}
+          onChange={handleInputChange}
+          className="w-full bg-[#111] text-white border border-[#00ffff] px-4 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#00ffff]"
+        />
+
+        {error && <p className="text-red-400 text-sm text-center">{error}</p>}
+
+        <div className="flex justify-between items-center pt-2">
+          <button
+            type="submit"
+            className="bg-[#00ffff] text-black font-semibold px-5 py-2 rounded hover:bg-[#00cccc] transition"
+          >
+            Download
+          </button>
+          <button
+            type="button"
+            onClick={() => setShowForm(false)}
+            className="text-sm text-gray-400 hover:underline"
+          >
+            Cancel
+          </button>
         </div>
-      )}
+      </form>
+    </div>
+  </div>
+)}
+
     </main>
   );
 }
